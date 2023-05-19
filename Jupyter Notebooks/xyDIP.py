@@ -73,7 +73,7 @@ class DeepImagePrior(object):
         torch.backends.cudnn.benchmark = True # Find the most suitable cuDNN algorithm to maximize performance
         dtype = torch.FloatTensor
         batch_size = H.shape[0]
-        x_dip_ay = np.empty((batch_size,2*self.num_tx_ant))
+        x_dip_ay = np.empty((batch_size,self.num_tx_ant,2,1))
         num_stop_point = []
         
         for bs in range(batch_size):
@@ -81,7 +81,7 @@ class DeepImagePrior(object):
             i = 0            
             flag = False
             
-            net = Decoder(self.num_tx_ant).type(dtype)    ### Define the Neural network
+            net = Decoder(self.num_tx_ant,self.num_tx_ant).type(dtype)    ### Define the Neural network
             mse = torch.nn.MSELoss().type(dtype)        ### Loss function: Mean Squared Error; MSE = \frac{1}{n}\sum_{i=1}^{n}(y_i - \hat{y}_i)^2
             # Instance Adam Optimizer
             optimizer = torch.optim.Adam(net.parameters(), lr= self.LR)     ###Adam optimizer
@@ -93,8 +93,11 @@ class DeepImagePrior(object):
             # print('Y =',Y)
             # print('H shape=',H.shape)
             # print('H =',H)
-            y_torch = torch.from_numpy((Y[bs]).numpy()).reshape(1,1,2*self.num_rx_ant,1).type(dtype)
-            H_torch = torch.from_numpy((H[bs]).numpy()).reshape(1,1,2*self.num_rx_ant,2*self.num_tx_ant).type(dtype)
+            # y_torch = torch.from_numpy((Y[bs]).numpy()).reshape(1,1,2*self.num_rx_ant,1).type(dtype)
+            # H_torch = torch.from_numpy((H[bs]).numpy()).reshape(1,1,2*self.num_rx_ant,2*self.num_tx_ant).type(dtype)
+
+            y_torch = torch.from_numpy((Y[bs]).numpy()).type(dtype)
+            H_torch = torch.from_numpy((H[bs]).numpy()).type(dtype)
             # print('y_torch shape=',y_torch.shape)
             # print('y_torch =',y_torch)
             # print('H_torch shape=',H_torch.shape)
@@ -119,15 +122,18 @@ class DeepImagePrior(object):
                 out = net_output*max_constellation
                 # print('out =', out)
                 # out = net(net_input).type(dtype)*np.max(self.constellation)
-                out1 = out.reshape(1,1,2*self.num_tx_ant,1).type(dtype)
                 # print('out1 shape =',out1.shape)
                 # print('out1 =',out1)
-
-                # result = torch.matmul(H_torch,out1).type(dtype)
+                out1 = torch.reshape(out.repeat(self.num_rx_ant,1,1,1),[self.num_rx_ant,self.num_tx_ant,2,1])
+                # print('out1 shape =',out1.shape)
+                # print('out1 =',out1)
+                result = torch.matmul(H_torch,out1)
+                # print('result shape =',result.shape)
                 # print('result =',result)
-                # Y_hat = torch.sum(result, axis=2)
-
-                Y_hat = torch.matmul(H_torch,out1).type(dtype)
+                Y_hat = torch.sum(result, axis=1)
+                # print('Y_hat shape =',Y_hat.shape)
+                # print('Y_hat =',Y_hat)
+                # Y_hat = torch.matmul(H_torch,out1).type(dtype)
 
                 # print('Y_hat =',Y_hat)
                 # print('y_torch =',y_torch)
@@ -165,18 +171,23 @@ class DeepImagePrior(object):
                         num_stop_point.append(i)
                         flag = True
 
-            print('out1 =',out1)
+            # H_torch_qualified = H_torch.reshape(self.num_rx_ant,self.num_tx_ant,2,2)
+            # out1 = out1.reshape(self.num_rx_ant,self.num_tx_ant,2,2)
+            # print('out1[1] shape=',out1[1].shape)
+            # print('out1[1] =',out1[1])
+            # print('H_torch shape=',H_torch.shape)
             # print('H_torch =',H_torch)
             # print('total_loss =',total_loss)
+            # print('Y_hat shape=',Y_hat.shape)
             # print('Y_hat =',Y_hat)
             # print('y_torch =',y_torch)            
             # print('x_dip =', x_dip)            
-            x_dip_ay[bs] = x_dip.reshape(-1)
+            x_dip_ay[bs] = out1[1].detach().numpy()
             # print('x_dip_ay[{}] ={}'.format(bs, x_dip_ay[bs]))
         return x_dip_ay,num_stop_point
 
 class Decoder(nn.Module):
-    def __init__(self,num_tx_ant):
+    def __init__(self,num_rx_ant,num_tx_ant):
         super().__init__()
         
         self.nn1 = nn.Linear(4,8) # Define numbers of input (4) and output (8) of fully connected layer
@@ -184,7 +195,7 @@ class Decoder(nn.Module):
                                   # Bias.shape = number of output (8)
         self.nn2 = nn.Linear(8,16)
         self.nn3 = nn.Linear(16,32)
-        self.nn4 = nn.Linear(32,(2*num_tx_ant)) # Tx
+        self.nn4 = nn.Linear(32,(2*num_tx_ant))
         self.act = nn.Tanh() # Define Activation Function: Tanh()
          
     def forward(self,x): 

@@ -40,8 +40,8 @@ class Complex2Real(tf.keras.layers.Layer):
         # print('f =',f)
         X_inCH_real = f
 
-        print('X_inCH_real shape =',tf.shape(X_inCH_real))
-        print('X_inCH_real =',X_inCH_real)
+        # print('X_inCH_real shape =',tf.shape(X_inCH_real))
+        # print('X_inCH_real =',X_inCH_real)
 
         Y_real_part = tf.math.real(Y);
         # print('Y_real_part =',Y_real_part)
