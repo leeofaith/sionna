@@ -57,7 +57,6 @@ class DeepImagePrior(object):
         ser = np.sum(true_indices!=estim_indices)/true_indices.size
         return ser
 
-
     def DIP(self,Y,H):
         
         ### Enable CUDA DNN library (cuDNN) to accelerate NN operations

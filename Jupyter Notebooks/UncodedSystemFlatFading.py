@@ -116,8 +116,14 @@ class UncodedSystemFlatFading(Model): # Inherits from Keras Model
         self.c2r = Complex2Real(num_rx_ant=NUM_RX_ANT,num_tx_ant=NUM_TX_ANT)
 
     # @tf.function # Enable graph execution to speed things up
-    def __call__(self, NUM_DATA_GROUP, BATCH_SIZE, EBN0_DB_MIN, EBN0_DB_MAX, NUM_EBN0_POINTS):
-
+    def __call__(self,
+                 NUM_DATA_GROUP,
+                 BATCH_SIZE,
+                 EBN0_DB_MIN,
+                 EBN0_DB_MAX,
+                 NUM_EBN0_POINTS):
+        
+        tf.config.run_functions_eagerly(True)
         snrs = np.linspace(EBN0_DB_MIN,EBN0_DB_MAX,NUM_EBN0_POINTS)
         # bers = []
         sers_zf = np.empty((NUM_DATA_GROUP, NUM_EBN0_POINTS))
@@ -125,9 +131,10 @@ class UncodedSystemFlatFading(Model): # Inherits from Keras Model
         sers_dip = np.empty((NUM_DATA_GROUP, NUM_EBN0_POINTS))
 
         for i in range(0, NUM_DATA_GROUP):
-
-            print('Data Group {}'.format(i))
-            print('Processing...')
+            print('|                   Data Group {}                     |'.format(i+1))
+            print('______________________________________________________')
+            print('|  EBN0[DB]  |  SER(ZF)  |  SER(LMMSE)  |  SER(DIP)  |')
+            print('______________________________________________________')
             b = self.binary_source([BATCH_SIZE,self.NUM_TX_ANT,self.Block_Length])
             x =  self.mapper(b)
             shape = tf.shape(x)
@@ -135,7 +142,8 @@ class UncodedSystemFlatFading(Model): # Inherits from Keras Model
             j = 0
 
             for EBN0_DB in np.linspace(EBN0_DB_MIN,EBN0_DB_MAX,NUM_EBN0_POINTS):
-                # print('EBN0_DB =',EBN0_DB)
+                print('            ')
+                print("{:^12.8f}".format(EBN0_DB), end='  ')
                 # no channel coding used; we set coderate=1.0
                 no = sn.utils.ebnodb2no(ebno_db=EBN0_DB,
                                         num_bits_per_symbol=self.NUM_BITS_PER_SYMBOL,
@@ -169,6 +177,11 @@ class UncodedSystemFlatFading(Model): # Inherits from Keras Model
                 ser_zf = sn.utils.compute_ser(x_ind, x_ind_hat_zf)
                 ser_lmmse = sn.utils.compute_ser(x_ind, x_ind_hat_lmmse)
                 ser_dip = sn.utils.compute_ser(x_ind, x_ind_hat_dip)
+                print("{:^12.8f}".format(ser_zf), end='  ')
+                print("{:^12.8f}".format(ser_lmmse), end='  ')
+                print("{:^12.8f}".format(ser_lmmse), end='  ')
+                print("\n")
+                print('______________________________________________________')
                 sers_zf[i, j] = ser_zf
                 sers_lmmse[i, j] = ser_lmmse
                 sers_dip[i, j] = ser_dip
