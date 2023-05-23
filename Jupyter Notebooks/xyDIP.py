@@ -3,10 +3,10 @@ import torch
 from torch import nn
 
 class DeepImagePrior(object):
-    def __init__(self,num_rx_ant,num_tx_ant,M, iteration,LR,buffer_size,threshold,stop):
+    def __init__(self,num_tx_ant,num_rx_ant,M, iteration,LR,buffer_size,threshold,stop):
         
-        self.num_rx_ant = num_rx_ant
         self.num_tx_ant = num_tx_ant    #### Number of transmitted symbols in real domain;
+        self.num_rx_ant = num_rx_ant    #### Number of received symbols in real domain;
         self.M = M                      #### Modulation order, 4 for 4QAM, 16 for 16QAM;
         self.iteration = iteration      #### Number of max iterations used for DIP;
         self.LR = LR                    #### Learning rate, typically set to 0.01; Control step size of updating the model parameters at each iteration;
@@ -25,7 +25,7 @@ class DeepImagePrior(object):
 
     def QAM_const(self):
         mod_n = self.M
-        sqrt_mod_n = np.int(np.sqrt(mod_n))
+        sqrt_mod_n = np.int(np.sqrt(mod_n)) # type: ignore
         real_qam_consts = np.empty((mod_n), dtype=np.int64)
         imag_qam_consts = np.empty((mod_n), dtype=np.int64)
         for i in range(sqrt_mod_n):
@@ -60,9 +60,9 @@ class DeepImagePrior(object):
     def DIP(self,Y,H):
         
         ### Enable CUDA DNN library (cuDNN) to accelerate NN operations
-        torch.backends.cudnn.enabled = True
+        torch.backends.cudnn.enabled = True # type: ignore
         ### Find the most suitable cuDNN algorithm to maximize performance
-        torch.backends.cudnn.benchmark = True
+        torch.backends.cudnn.benchmark = True # type: ignore
         dtype = torch.FloatTensor
         batch_size = H.shape[0]
         x_dip_ay = np.empty((batch_size,self.num_tx_ant,2,1))
@@ -74,9 +74,9 @@ class DeepImagePrior(object):
             flag = False
 
             ### Define the Neural network
-            net = Decoder(self.num_tx_ant,self.num_tx_ant).type(dtype)
+            net = Decoder(self.num_tx_ant,self.num_tx_ant).type(dtype) # type: ignore
             ### Loss function: Mean Squared Error; MSE = \frac{1}{n}\sum_{i=1}^{n}(y_i - \hat{y}_i)^2
-            mse = torch.nn.MSELoss().type(dtype)
+            mse = torch.nn.MSELoss().type(dtype) # type: ignore
             ### Instance Adam Optimizer
             optimizer = torch.optim.Adam(net.parameters(), lr= self.LR) ###Adam optimizer
             ### Reset the Weight of the convolutional or linear layers to random values
@@ -84,8 +84,8 @@ class DeepImagePrior(object):
             ### Normal distribution arry with size(1,4), can be modified to other distribuion types
             net_input = torch.randn(1,4) ### Random input for DIP
             
-            y_torch = torch.from_numpy((Y[bs]).numpy()).type(dtype)
-            H_torch = torch.from_numpy((H[bs]).numpy()).type(dtype)
+            y_torch = torch.from_numpy((Y[bs]).numpy()).type(dtype) # type: ignore
+            H_torch = torch.from_numpy((H[bs]).numpy()).type(dtype) # type: ignore
             
             variance_history = []
             earlystop = EarlyStop(size= self.buffer_size)
@@ -101,7 +101,7 @@ class DeepImagePrior(object):
                 out = net_output*max_constellation
                 out1 = torch.reshape(out.repeat(self.num_rx_ant,1,1,1),[self.num_rx_ant,self.num_tx_ant,2,1])
                 result = torch.matmul(H_torch,out1)
-                Y_hat = torch.sum(result, axis=1)
+                Y_hat = torch.sum(result, axis=1) # type: ignore
                 total_loss = mse(Y_hat,y_torch)
                 total_loss.backward()
                 optimizer.step()
