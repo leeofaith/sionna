@@ -32,6 +32,7 @@ except ImportError as e:
     os.system("pip install sionna")
     import sionna as sn
 
+from sionna.mimo import lmmse_equalizer, zf_equalizer
 from xyDIP import DeepImagePrior
 from complex2real import Complex2Real
 
@@ -153,8 +154,8 @@ class UncodedSystemFlatFading(Model): # Inherits from Keras Model
                 # y and h are the Channel Output and Channel Realizations, respectively
                 y, h = self.flatfading_channel([x_reshape, no])
                 s = tf.cast(no*tf.eye(self.NUM_RX_ANT, self.NUM_RX_ANT), y.dtype)
-                x_hat_zf, no_eff_zf = sn.mimo.zf_equalizer(y, h, s)
-                x_hat_lmmse, no_eff_lmmse = sn.mimo.lmmse_equalizer(y, h, s)
+                x_hat_zf, no_eff_zf = zf_equalizer(y, h, s)
+                x_hat_lmmse, no_eff_lmmse = lmmse_equalizer(y, h, s)
                 X_inCH_real,H_real,Y_real = self.c2r.C2R(x_reshape,h,y)
                 x_dip_ay,num_stop_point = self.dip.DIP(Y_real,H_real)
                 x_dip_ay_real_part,x_dip_ay_imag_part = tf.split(x_dip_ay, num_or_size_splits=2, axis=2)
@@ -187,6 +188,39 @@ class UncodedSystemFlatFading(Model): # Inherits from Keras Model
                 sers_dip[i, j] = ser_dip
                 j = j+1
             print('Done')
+
+            plt.figure(1)
+            plt.axes().set_aspect(1)
+            plt.grid(True)
+            plt.title('Flat-Fading Channel Constellation', fontsize=12)
+            plt.xticks(fontsize=10)
+            plt.yticks(fontsize=10)
+            plt.xlabel('REAL', fontsize=10)
+            plt.ylabel('IMAG', fontsize=10)
+            plt.scatter(tf.math.real(x), tf.math.imag(x), s=16, c='b', label='TX')
+            plt.scatter(tf.math.real(x_hat_zf), tf.math.imag(x_hat_zf), s=16, c='y', label='ZF')
+            plt.scatter(tf.math.real(x_hat_lmmse), tf.math.imag(x_hat_lmmse), s=16, c='g', label='LMMSE')
+            plt.scatter(tf.math.real(x_hat_dip), tf.math.imag(x_hat_dip), s=16, c='r', label='DIP')
+            plt.legend(loc='lower left', fontsize=8)
+            plt.tight_layout()
+
+            plt.figure(2)
+            title = "SER: Noncoding MIMO Falt-Fading with ZF, MMSE, DIP Equalizer"
+            xlabel = "$E_b/N_0$ (dB)"
+            ylabel = "SER (log)"
+            plt.title(title, fontsize=12)
+            plt.xticks(fontsize=10)
+            plt.yticks(fontsize=10)
+            plt.xlabel(xlabel, fontsize=10)
+            plt.ylabel(ylabel, fontsize=10)
+            plt.grid(which="both")
+            plt.semilogy(snrs, x_hat_zf, 'b', label='ZF')
+            plt.semilogy(snrs, x_hat_lmmse, 'g', label='LMMSE')
+            plt.semilogy(snrs, x_hat_dip, 'r', label='DIP')
+            plt.legend(loc='lower left', fontsize=8)
+            plt.tight_layout()
+
+            plt.show()
 
         sers_zf_mean = np.mean(sers_zf, axis=0)
         sers_lmmse_mean = np.mean(sers_lmmse, axis=0)
