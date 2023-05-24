@@ -3,10 +3,10 @@ import torch
 from torch import nn
 
 class DeepImagePrior(object):
-    def __init__(self,num_tx_ant,num_rx_ant,M, iteration,LR,buffer_size,threshold,stop):
+    def __init__(self,num_rx_ant,num_tx_ant,M,iteration,LR,buffer_size,threshold,stop):
         
-        self.num_tx_ant = num_tx_ant    #### Number of transmitted symbols in real domain;
         self.num_rx_ant = num_rx_ant    #### Number of received symbols in real domain;
+        self.num_tx_ant = num_tx_ant    #### Number of transmitted symbols in real domain;
         self.M = M                      #### Modulation order, 4 for 4QAM, 16 for 16QAM;
         self.iteration = iteration      #### Number of max iterations used for DIP;
         self.LR = LR                    #### Learning rate, typically set to 0.01; Control step size of updating the model parameters at each iteration;
@@ -65,7 +65,7 @@ class DeepImagePrior(object):
         torch.backends.cudnn.benchmark = True # type: ignore
         dtype = torch.FloatTensor
         batch_size = H.shape[0]
-        x_dip_ay = np.empty((batch_size,self.num_tx_ant,2,1))
+        x_dip_ay = np.zeros((batch_size,self.num_tx_ant,2,1), dtype=np.float32)
         num_stop_point = []
         
         for bs in range(batch_size):
@@ -74,7 +74,7 @@ class DeepImagePrior(object):
             flag = False
 
             ### Define the Neural network
-            net = Decoder(self.num_tx_ant,self.num_tx_ant).type(dtype) # type: ignore
+            net = Decoder(self.num_tx_ant).type(dtype) # type: ignore
             ### Loss function: Mean Squared Error; MSE = \frac{1}{n}\sum_{i=1}^{n}(y_i - \hat{y}_i)^2
             mse = torch.nn.MSELoss().type(dtype) # type: ignore
             ### Instance Adam Optimizer
@@ -123,13 +123,18 @@ class DeepImagePrior(object):
                     if cur_var != 0 and cur_var <  self.threshold:
                         num_stop_point.append(i)
                         flag = True
-      
-            x_dip_ay[bs] = out1[1].detach().numpy()
-
+                # Historical version of slicing out1:
+                # x_dip_ay[bs] = out1[1].detach().numpy()
+                # Totally repeat self.num_rx_ant times for Tx and slice the first repeat.
+                x_dip_ay[bs] = (out1[0:1, :, :, :]).detach().numpy()
+            # Historical position of out1:
+            # x_dip_ay[bs] = out1[1].detach().numpy()
+            # print('x_dip_ay.shape',x_dip_ay.shape)
+            # print('x_dip_ay =',x_dip_ay)         
         return x_dip_ay,num_stop_point
 
 class Decoder(nn.Module):
-    def __init__(self,num_rx_ant,num_tx_ant):
+    def __init__(self,num_tx_ant):
         super().__init__()
         
         self.nn1 = nn.Linear(4,8) ### Define numbers of input (4) and output (8) of fully connected layer

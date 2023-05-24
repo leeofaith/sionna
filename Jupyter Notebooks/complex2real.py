@@ -1,7 +1,8 @@
 import numpy as np
 import tensorflow as tf
 # For the implementation of the Keras models
-from tensorflow.keras.layers import Layer
+from tensorflow import keras
+from keras.layers import Layer
 
 class Complex2Real(tf.keras.layers.Layer):
 
