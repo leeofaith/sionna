@@ -25,7 +25,7 @@ import sys
 
 # Import Plot Function
 from bokeh.plotting import show
-from PlotFigure import plot_figure
+from UncodingPlotFigure import uncoding_plot_figure
 
 # Import Sionna
 try:
@@ -345,18 +345,20 @@ class UncodedSystemFlatFading(Model): # Inherits from Keras Model
 
         ##  Method 2: Bokeh
         #   Plot SER
-        plot_ser = plot_figure(x=snrs, 
-                               y1=sers_zf_mean,
-                               y2=sers_lmmse_mean,
-                               y3=sers_dip_mean,
-                               y_label="SER (log)",
-                               title="SER: Noncoding MIMO Falt-Fading with ZF, MMSE, DIP Equalizer")
+        plot_ser = uncoding_plot_figure(x=snrs, 
+                                        y1=sers_zf_mean,
+                                        y2=sers_lmmse_mean,
+                                        y3=sers_dip_mean,
+                                        y_label="SER (log)",
+                                        title="SER: Noncoding MIMO Falt-Fading with ZF, MMSE, DIP Equalizer",
+                                        filename="SER-Noncoding FaltFading without Spaital Correlation.html")
         #   Plot BER
-        plot_ber = plot_figure(x=snrs, 
-                               y1=bers_zf_mean,
-                               y2=bers_lmmse_mean,
-                               y3=bers_dip_mean,
-                               y_label="BER (log)",
-                               title="BER: Noncoding MIMO Falt-Fading with ZF, MMSE, DIP Equalizer")
+        plot_ber = uncoding_plot_figure(x=snrs, 
+                                        y1=bers_zf_mean,
+                                        y2=bers_lmmse_mean,
+                                        y3=bers_dip_mean,
+                                        y_label="BER (log)",
+                                        title="BER: Noncoding MIMO Falt-Fading with ZF, MMSE, DIP Equalizer",
+                                        filename="BER-Noncoding FaltFading without Spaital Correlation.html")
 
         return snrs, sers_zf_mean, sers_lmmse_mean, sers_dip_mean

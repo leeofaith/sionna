@@ -2,12 +2,13 @@ from bokeh.plotting import figure, show, output_file
 from bokeh.models import HoverTool
 from bokeh.io import output_notebook
 
-def plot_figure(x, 
-                y1,
-                y2,
-                y3,
-                y_label,
-                title):
+def uncoding_plot_figure(x, 
+                         y1,
+                         y2,
+                         y3,
+                         y_label,
+                         title,
+                         filename):
 
     # 创建绘图对象
     # p = figure(y_axis_type="log", x_axis_label='X', y_axis_label='Y', title='Plot with Log Scale')
@@ -54,6 +55,7 @@ def plot_figure(x,
 
     # 设置输出文件
     # output_file("plot.html")
+    output_file(filename)
     
     # 显示图形
     # show(p, browser=None)

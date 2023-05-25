@@ -25,7 +25,7 @@ import sys
 
 # Import Plot Function
 from bokeh.plotting import show
-from PlotFigure import plot_figure
+from CodedPlotFigure import coded_plot_figure
 
 # Import Sionna
 try:
@@ -37,13 +37,13 @@ except ImportError as e:
     import sionna as sn
 
 from sionna.mimo import lmmse_equalizer, zf_equalizer
-from xyDIP import DeepImagePrior
+from xyDIPgpu import DeepImagePrior
 from complex2real import Complex2Real
 from sionna.utils.misc import hard_decisions
 from sionna.utils.metrics import compute_ber, count_errors
 from sionna.mimo import complex2real_vector, complex2real_channel
 
-class CodedSystemFlatFading(Model): # Inherits from Keras Model
+class CodedSystemFlatFadingGPU(Model): # Inherits from Keras Model
     def __init__(self,
                  Block_Length,
                  NUM_BITS_PER_SYMBOL,
@@ -392,40 +392,64 @@ class CodedSystemFlatFading(Model): # Inherits from Keras Model
                 print("{}|".format(bit_err_dip).rjust(12), end='   ')
                 print("{:.3e}".format(time_spent).rjust(12), end='')
                 print('|')
+                print('|', end=' ')
+                print("CODED|".rjust(12), end='')
+                print("{:.3e}|".format(coded_ser_zf).rjust(12), end='')
+                print("{:.3e}|".format(coded_ber_zf).rjust(12), end='     ')
+                print("{}|".format(coded_bit_err_zf).rjust(12), end='   ')
+                print("{:.3e}|".format(coded_ser_lmmse).rjust(12), end='   ')
+                print("{:.3e}|".format(coded_ber_lmmse).rjust(12), end='        ')
+                print("{}|".format(coded_bit_err_lmmse).rjust(12), end=' ')
+                print("{:.3e}|".format(coded_ser_dip).rjust(12), end=' ')
+                print("{:.3e}|".format(coded_ber_dip).rjust(12), end='      ')
+                print("{}|".format(coded_bit_err_dip).rjust(12), end='   ')
+                print("{:.3e}".format(time_spent).rjust(12), end='')
+                print('|')
                 print('|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|')
 
                 j = j+1
 
-                plt.figure()
-                plt.axes().set_aspect(1)
-                plt.grid(True)
-                plt.title('Flat-Fading Channel Constellation (SNR: {} dB)'.format(EBN0_DB), fontsize=12)
-                plt.xticks(fontsize=10)
-                plt.yticks(fontsize=10)
-                plt.xlabel('REAL', fontsize=10)
-                plt.ylabel('IMAG', fontsize=10)
-                plt.scatter(tf.math.real(x), tf.math.imag(x), s=16, c='b', label='TX')
-                plt.scatter(tf.math.real(x_hat_zf), tf.math.imag(x_hat_zf), s=16, c='y', label='ZF')
-                plt.scatter(tf.math.real(x_hat_lmmse), tf.math.imag(x_hat_lmmse), s=16, c='g', label='LMMSE')
-                plt.scatter(tf.math.real(x_hat_dip), tf.math.imag(x_hat_dip), s=16, c='r', label='DIP')
-                plt.legend(loc='lower left', fontsize=8)
-                plt.tight_layout()
+                # plt.figure()
+                # plt.axes().set_aspect(1)
+                # plt.grid(True)
+                # plt.title('Flat-Fading Channel Constellation (SNR: {} dB)'.format(EBN0_DB), fontsize=12)
+                # plt.xticks(fontsize=10)
+                # plt.yticks(fontsize=10)
+                # plt.xlabel('REAL', fontsize=10)
+                # plt.ylabel('IMAG', fontsize=10)
+                # plt.scatter(tf.math.real(x), tf.math.imag(x), s=16, c='b', label='TX')
+                # plt.scatter(tf.math.real(x_hat_zf), tf.math.imag(x_hat_zf), s=16, c='y', label='ZF')
+                # plt.scatter(tf.math.real(x_hat_lmmse), tf.math.imag(x_hat_lmmse), s=16, c='g', label='LMMSE')
+                # plt.scatter(tf.math.real(x_hat_dip), tf.math.imag(x_hat_dip), s=16, c='r', label='DIP')
+                # plt.legend(loc='lower left', fontsize=8)
+                # plt.tight_layout()
 
             print('Done')
 
         ### Mean SER Calculation
+        ##  Uncoded
         sers_zf_mean = np.mean(sers_zf, axis=0)
         sers_lmmse_mean = np.mean(sers_lmmse, axis=0)
         sers_dip_mean = np.mean(sers_dip, axis=0)
+        ##  Coded
+        coded_sers_zf_mean = np.mean(coded_sers_zf, axis=0)
+        coded_sers_lmmse_mean = np.mean(coded_sers_lmmse, axis=0)
+        coded_sers_dip_mean = np.mean(coded_sers_dip, axis=0)        
 
         ### Mean BER Calculation
+        ##   Uncoded
         bers_zf_mean = np.mean(bers_zf, axis=0)
         bers_lmmse_mean = np.mean(bers_lmmse, axis=0)
         bers_dip_mean = np.mean(bers_dip, axis=0)
+        ##   Coded
+        coded_bers_zf_mean = np.mean(coded_bers_zf, axis=0)
+        coded_bers_lmmse_mean = np.mean(coded_bers_lmmse, axis=0)
+        coded_bers_dip_mean = np.mean(coded_bers_dip, axis=0)        
 
-        ### Plot SER and BER Figures
-        ##  Method 1: Matplot
-        #   Plot SER
+        ##### Plot SER and BER Figures
+        ####  Method 1: Matplot
+        ###   Plot SER
+        ##    Uncoded
         plt.figure()
         title = "SER: Noncoding MIMO Falt-Fading with ZF, MMSE, DIP Equalizer"
         xlabel = "$E_b/N_0$ (dB)"
@@ -442,7 +466,45 @@ class CodedSystemFlatFading(Model): # Inherits from Keras Model
         plt.legend(loc='lower left', fontsize=8)
         plt.tight_layout()
 
-        #   Plot BER
+        ##    Coded
+        plt.figure()
+        title = "SER: Coding MIMO Falt-Fading with ZF, MMSE, DIP Equalizer"
+        xlabel = "$E_b/N_0$ (dB)"
+        ylabel = "SER (log)"
+        plt.title(title, fontsize=12)
+        plt.xticks(fontsize=10)
+        plt.yticks(fontsize=10)
+        plt.xlabel(xlabel, fontsize=10)
+        plt.ylabel(ylabel, fontsize=10)
+        plt.grid(which="both")
+        plt.semilogy(snrs, coded_sers_zf_mean, 'b', label='Coded ZF')
+        plt.semilogy(snrs, coded_sers_lmmse_mean, 'g', label='Coded LMMSE')
+        plt.semilogy(snrs, coded_sers_dip_mean, 'r', label='Coded DIP')
+        plt.legend(loc='lower left', fontsize=8)
+        plt.tight_layout()
+
+        ##    Combine Uncoded and Coded
+        plt.figure()
+        title = "SER: MIMO Falt-Fading with ZF, MMSE, DIP Equalizer"
+        xlabel = "$E_b/N_0$ (dB)"
+        ylabel = "SER (log)"
+        plt.title(title, fontsize=12)
+        plt.xticks(fontsize=10)
+        plt.yticks(fontsize=10)
+        plt.xlabel(xlabel, fontsize=10)
+        plt.ylabel(ylabel, fontsize=10)
+        plt.grid(which="both")
+        plt.semilogy(snrs, sers_zf_mean, 'violet', label='ZF')
+        plt.semilogy(snrs, sers_lmmse_mean, 'turquoise', label='LMMSE')
+        plt.semilogy(snrs, sers_dip_mean, 'orange', label='DIP')        
+        plt.semilogy(snrs, coded_sers_zf_mean, 'blue', label='Coded ZF')
+        plt.semilogy(snrs, coded_sers_lmmse_mean, 'green', label='Coded LMMSE')
+        plt.semilogy(snrs, coded_sers_dip_mean, 'red', label='Coded DIP')
+        plt.legend(loc='lower left', fontsize=8)
+        plt.tight_layout()
+
+        ###   Plot BER
+        ##    Uncoded
         plt.figure()
         title = "BER: Noncoding MIMO Falt-Fading with ZF, MMSE, DIP Equalizer"
         xlabel = "$E_b/N_0$ (dB)"
@@ -459,22 +521,88 @@ class CodedSystemFlatFading(Model): # Inherits from Keras Model
         plt.legend(loc='lower left', fontsize=8)
         plt.tight_layout()
 
+        ##    Coded
+        plt.figure()
+        title = "BER: Coding MIMO Falt-Fading with ZF, MMSE, DIP Equalizer"
+        xlabel = "$E_b/N_0$ (dB)"
+        ylabel = "BER (log)"
+        plt.title(title, fontsize=12)
+        plt.xticks(fontsize=10)
+        plt.yticks(fontsize=10)
+        plt.xlabel(xlabel, fontsize=10)
+        plt.ylabel(ylabel, fontsize=10)
+        plt.grid(which="both")
+        plt.semilogy(snrs, coded_bers_zf_mean, 'b', label='Coded ZF')
+        plt.semilogy(snrs, coded_bers_lmmse_mean, 'g', label='Coded LMMSE')
+        plt.semilogy(snrs, coded_bers_dip_mean, 'r', label='Coded DIP')
+        plt.legend(loc='lower left', fontsize=8)
+        plt.tight_layout()
+
+        ##    Combine Uncoded and Coded
+        plt.figure()
+        title = "BER: MIMO Falt-Fading with ZF, MMSE, DIP Equalizer"
+        xlabel = "$E_b/N_0$ (dB)"
+        ylabel = "BER (log)"
+        plt.title(title, fontsize=12)
+        plt.xticks(fontsize=10)
+        plt.yticks(fontsize=10)
+        plt.xlabel(xlabel, fontsize=10)
+        plt.ylabel(ylabel, fontsize=10)
+        plt.grid(which="both")
+        plt.semilogy(snrs, bers_zf_mean, 'violet', label='ZF')
+        plt.semilogy(snrs, bers_lmmse_mean, 'turquoise', label='LMMSE')
+        plt.semilogy(snrs, bers_dip_mean, 'orange', label='DIP')
+        plt.semilogy(snrs, coded_bers_zf_mean, 'blue', label='Coded ZF')
+        plt.semilogy(snrs, coded_bers_lmmse_mean, 'green', label='Coded LMMSE')
+        plt.semilogy(snrs, coded_bers_dip_mean, 'red', label='Coded DIP')
+        plt.legend(loc='lower left', fontsize=8)
+        plt.tight_layout()
+
+       ###   Plot SER and BER, Uncoded and Coded        
+        plt.figure()
+        title = "SER & BER: MIMO Falt-Fading with ZF, MMSE, DIP Equalizer"
+        xlabel = "$E_b/N_0$ (dB)"
+        ylabel = "SER/BER (log)"
+        plt.title(title, fontsize=12)
+        plt.xticks(fontsize=10)
+        plt.yticks(fontsize=10)
+        plt.xlabel(xlabel, fontsize=10)
+        plt.ylabel(ylabel, fontsize=10)
+        plt.grid(which="both")
+        plt.semilogy(snrs, sers_zf_mean, 'violet', label='ZF SER')
+        plt.semilogy(snrs, sers_lmmse_mean, 'turquoise', label='LMMSE SER')
+        plt.semilogy(snrs, sers_dip_mean, 'orange', label='DIP SER')        
+        plt.semilogy(snrs, coded_sers_zf_mean, 'dodgerblue', label='Coded ZF SER')
+        plt.semilogy(snrs, coded_sers_lmmse_mean, 'lime', label='Coded LMMSE SER')
+        plt.semilogy(snrs, coded_sers_dip_mean, 'darkred', label='Coded DIP SER')
+        plt.semilogy(snrs, bers_zf_mean, 'purple', label='ZF BER')
+        plt.semilogy(snrs, bers_lmmse_mean, 'lightseagreen', label='LMMSE BER')
+        plt.semilogy(snrs, bers_dip_mean, 'gold', label='DIP BER')
+        plt.semilogy(snrs, coded_bers_zf_mean, 'blue', label='Coded ZF BER')
+        plt.semilogy(snrs, coded_bers_lmmse_mean, 'green', label='Coded LMMSE BER')
+        plt.semilogy(snrs, coded_bers_dip_mean, 'red', label='Coded DIP BER')
+        plt.legend(loc='lower left', fontsize=8)
+        plt.tight_layout()
+
         plt.show()
 
         ##  Method 2: Bokeh
-        #   Plot SER
-        plot_ser = plot_figure(x=snrs, 
-                               y1=sers_zf_mean,
-                               y2=sers_lmmse_mean,
-                               y3=sers_dip_mean,
-                               y_label="SER (log)",
-                               title="SER: Noncoding MIMO Falt-Fading with ZF, MMSE, DIP Equalizer")
-        #   Plot BER
-        plot_ber = plot_figure(x=snrs, 
-                               y1=bers_zf_mean,
-                               y2=bers_lmmse_mean,
-                               y3=bers_dip_mean,
-                               y_label="BER (log)",
-                               title="BER: Noncoding MIMO Falt-Fading with ZF, MMSE, DIP Equalizer")
+        #   Plot SER and BER, Uncoded and Coded
+        plot_ser = coded_plot_figure(x=snrs, 
+                                     y1=sers_zf_mean,
+                                     y2=sers_lmmse_mean,
+                                     y3=sers_dip_mean,
+                                     y4=coded_sers_zf_mean,
+                                     y5=coded_sers_lmmse_mean,
+                                     y6=coded_sers_dip_mean,
+                                     y7=bers_zf_mean,
+                                     y8=bers_lmmse_mean,
+                                     y9=bers_dip_mean,
+                                     y10=coded_bers_zf_mean,
+                                     y11=coded_bers_lmmse_mean,
+                                     y12=coded_bers_dip_mean,
+                                     y_label="SER/BER (log)",
+                                     title="SER & BER: MIMO Falt-Fading with ZF, MMSE, DIP Equalizer",
+                                     filename="SER/BER-FaltFading without Spaital Correlation.html")
 
         return snrs, sers_zf_mean, sers_lmmse_mean, sers_dip_mean
