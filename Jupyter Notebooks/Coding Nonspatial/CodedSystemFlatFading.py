@@ -145,7 +145,7 @@ class CodedSystemFlatFading(Model): # Inherits from Keras Model
                  EBN0_DB_MAX,
                  NUM_EBN0_POINTS):
         
-        tf.config.run_functions_eagerly(True)
+        # tf.config.run_functions_eagerly(True)
         snrs = np.linspace(EBN0_DB_MIN,EBN0_DB_MAX,NUM_EBN0_POINTS)
         ### Uncode Variables Definition
         sers_zf = np.empty((NUM_DATA_GROUP, NUM_EBN0_POINTS))
@@ -201,7 +201,7 @@ class CodedSystemFlatFading(Model): # Inherits from Keras Model
                 # no channel coding used; we set coderate=1.0
                 no = sn.utils.ebnodb2no(ebno_db=EBN0_DB,
                                         num_bits_per_symbol=self.NUM_BITS_PER_SYMBOL,
-                                        coderate=1.0) # Coderate set to 1 as we do uncoded transmission here
+                                        coderate=self.CODERATE) # Coderate set to 1 as we do uncoded transmission here
 
                 # y and h are the Channel Output and Channel Realizations, respectively
                 ### Channel Transmission
@@ -268,7 +268,7 @@ class CodedSystemFlatFading(Model): # Inherits from Keras Model
                 # print('x_hat_dip.dtype',x_hat_dip.dtype)
                 # print('x_hat_dip shape =',x_hat_dip.shape)
                 # print('x_hat_dip =',x_hat_dip)
-                no_eff_dip = no*np.ones(shape)
+                no_eff_dip = no*np.ones(shape) # type: ignore
 
                 ### Deep Image Prior Eqaulizer
                 ##  Coded
@@ -285,7 +285,7 @@ class CodedSystemFlatFading(Model): # Inherits from Keras Model
                 # print('x_hat_dip.dtype',x_hat_dip.dtype)
                 # print('x_hat_dip shape =',x_hat_dip.shape)
                 # print('x_hat_dip =',x_hat_dip)
-                coded_no_eff_dip = no*np.ones(shape_coded_x)                
+                coded_no_eff_dip = no*np.ones(shape_coded_x)                 # type: ignore
 
                 ### Soft Decision Outputs Received Symbols(Integer)
                 ##  Uncoded
