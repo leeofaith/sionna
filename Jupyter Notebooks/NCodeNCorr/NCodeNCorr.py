@@ -38,7 +38,6 @@ except ImportError as e:
 
 from sionna.mimo import lmmse_equalizer, zf_equalizer
 from DIP import DeepImagePrior
-# from complex2real import Complex2Real
 from sionna.utils.misc import hard_decisions
 from sionna.utils.metrics import compute_ber, count_errors
 from sionna.mimo import complex2real_vector, complex2real_channel
@@ -51,38 +50,6 @@ class ncodencorr(Model): # Inherits from Keras Model
                  DEMAPPING_METHOD,
                  NUM_RX_ANT,
                  NUM_TX_ANT):
-        """
-        A keras model of an uncoded transmission over the AWGN channel.
-
-        Parameters
-        ----------
-        NUM_BITS_PER_SYMBOL: int
-            The number of bits per constellation symbol, e.g., 4 for QAM16.
-
-        Block_Length: int
-            The number of bits per transmitted message block (will be the codeword length later).
-
-        Input
-        -----
-        BATCH_SIZE: int
-            The BATCH_SIZE of the Monte-Carlo simulation.
-
-        EBN0_DB: float
-            The `Eb/No` value (=rate-adjusted SNR) in dB.
-
-        Output
-        ------
-        (bits, llr):
-            Tuple:
-
-        bits: tf.float32
-            A tensor of shape `[BATCH_SIZE, Block_Length] of 0s and 1s
-            containing the transmitted information bits.
-
-        llr: tf.float32
-            A tensor of shape `[BATCH_SIZE, Block_Length] containing the
-            received log-likelihood-ratio (LLR) values.
-        """
 
         super().__init__() # Must call the Keras model initializer
         
@@ -103,26 +70,12 @@ class ncodencorr(Model): # Inherits from Keras Model
         self.SymbolDemapper = sn.mapping.SymbolDemapper(constellation_type=self.CONSTELLATION_TYPE,
                                                         num_bits_per_symbol=self.NUM_BITS_PER_SYMBOL,
                                                         hard_out=True)
-        # self.LDPC5GEncoder = sn.fec.ldpc.encoding.LDPC5GEncoder()
-        # self.LDPC5GDecoder = sn.fec.ldpc.decoding.LDPC5GDecoder()
         self.binary_source = sn.utils.BinarySource()
         self.awgn_channel = sn.channel.AWGN()
         self.flatfading_channel = sn.channel.FlatFadingChannel(num_tx_ant=self.NUM_TX_ANT,
                                                                num_rx_ant=self.NUM_RX_ANT,
                                                                add_awgn=True,
                                                                return_channel=True)
-        # self.KroneckerModel = sn.channel.KroneckerModel()
-        # self.exp_corr_mat = sn.channel.utils.exp_corr_mat()
-        # self.hard_decisions = sn.utils.misc.hard_decisions()
-        # self.dip = DeepImagePrior(num_rx_ant=NUM_RX_ANT, # Number of received symbol in real domain
-        #                           num_tx_ant=NUM_TX_ANT, # Number of transmitted symbol in real domain
-        #                           M=2**NUM_BITS_PER_SYMBOL, # Modulation order (16), 4 for 4QAM, 16 for 16QAM(4 bits/symbol)
-        #                           iteration=100, # Number of max iterations used for DIP: 100
-        #                           LR=0.01, # Learning rate,  typically set to 0.01
-        #                           buffer_size=30, # Iterations stored,  typically set to 30
-        #                           threshold=0.001, # Threshold of DIP stop,, typically set to 0.001
-        #                           stop=True) # True
-        # self.c2r = Complex2Real(num_rx_ant=NUM_RX_ANT,num_tx_ant=NUM_TX_ANT)
         self.dip = DeepImagePrior(user_num=2*NUM_TX_ANT,
                                   M=2**NUM_BITS_PER_SYMBOL,
                                   iteration=100,
@@ -131,8 +84,6 @@ class ncodencorr(Model): # Inherits from Keras Model
                                   threshold=0.001,
                                   stop=True)
 
-
-    # @tf.function # Enable graph execution to speed things up
     def __call__(self,
                  NUM_DATA_GROUP,
                  BATCH_SIZE,
@@ -140,9 +91,7 @@ class ncodencorr(Model): # Inherits from Keras Model
                  EBN0_DB_MAX,
                  NUM_EBN0_POINTS):
         
-        # tf.config.run_functions_eagerly(True)
         snrs = np.linspace(EBN0_DB_MIN,EBN0_DB_MAX,NUM_EBN0_POINTS)
-        # bers = []
         sers_zf = np.empty((NUM_DATA_GROUP, NUM_EBN0_POINTS))
         sers_lmmse = np.empty((NUM_DATA_GROUP, NUM_EBN0_POINTS))
         sers_dip = np.empty((NUM_DATA_GROUP, NUM_EBN0_POINTS))
@@ -224,7 +173,7 @@ class ncodencorr(Model): # Inherits from Keras Model
                 # Bit LLR Calculation
                 llr_zf = self.demapper([x_hat_zf, no_eff_zf])
                 llr_lmmse = self.demapper([x_hat_lmmse, no_eff_lmmse])
-                llr_dip = self.demapper([tf.cast(x_hat_dip, dtype=tf.complex64), no_eff_dip])
+                llr_dip = self.demapper([x_hat_dip, no_eff_dip])
 
                 ### Hard Decision on Received Bits
                 b_hat_zf = hard_decisions(llr_zf)
