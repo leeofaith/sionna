@@ -79,9 +79,9 @@ class ncodencorr(Model): # Inherits from Keras Model
         self.dip = DeepImagePrior(user_num=2*NUM_TX_ANT,
                                   M=2**NUM_BITS_PER_SYMBOL,
                                   iteration=100,
-                                  LR=0.01,
+                                  LR=0.008,
                                   buffer_size=30,
-                                  threshold=0.001,
+                                  threshold=0.0005,
                                   stop=True)
 
     def __call__(self,
@@ -130,20 +130,21 @@ class ncodencorr(Model): # Inherits from Keras Model
                 ##  Complex to Real
                 y_shape = tf.shape(y)
                 y_reshape = tf.reshape(y,[-1, self.NUM_RX_ANT])
-                y_reshape_real_part = np.real(y_reshape)
-                y_reshape_image_part = np.imag(y_reshape)
-                y_reshape_real = np.concatenate([y_reshape_real_part,y_reshape_image_part], axis=1)
+                y_reshape_real_part = tf.math.real(y_reshape)
+                y_reshape_image_part = tf.math.imag(y_reshape)
+                y_reshape_real = tf.concat([y_reshape_real_part,y_reshape_image_part], axis=1)
                 h_shape = tf.shape(h)
                 h_reshape = tf.reshape(h,[-1, self.NUM_RX_ANT, self.NUM_TX_ANT])
-                h_reshape_real_part = np.real(h_reshape)
-                h_reshape_imag_part = np.imag(h_reshape)
-                h_reshape_real = np.concatenate([np.concatenate([h_reshape_real_part, -h_reshape_imag_part], axis=2), np.concatenate([h_reshape_imag_part, h_reshape_real_part], axis=2)],axis=1)
+                h_reshape_real_part = tf.math.real(h_reshape)
+                h_reshape_imag_part = tf.math.imag(h_reshape)
+                h_reshape_real = tf.concat([tf.concat([h_reshape_real_part, tf.multiply(h_reshape_imag_part,-1)], axis=2),
+                                            tf.concat([h_reshape_imag_part, h_reshape_real_part], axis=2)],axis=1)
                 ##  DIP Equalizer
-                x_dip_ay,num_stop_point = self.dip.DIP(y_reshape_real,h_reshape_real)
+                x_dip_ay,num_stop_point = self.dip.DIP(np.array(y_reshape_real),np.array(h_reshape_real))
                 x_dip_ay_real_part,x_dip_ay_imag_part = np.split(x_dip_ay, indices_or_sections=2, axis=1)
                 x_hat_dip = tf.cast(tf.reshape(tf.complex(x_dip_ay_real_part,x_dip_ay_imag_part), shape), dtype=tf.complex64)
                 ##  Assume noise variance equal to channel noise
-                no_eff_dip = no*np.ones(shape)
+                no_eff_dip = no*tf.ones(shape)
 
                 ### Zero-Forcing Equalizer
                 x_hat_zf, no_eff_zf = zf_equalizer(y, h, s)
@@ -220,10 +221,10 @@ class ncodencorr(Model): # Inherits from Keras Model
                 plt.yticks(fontsize=10)
                 plt.xlabel('REAL', fontsize=10)
                 plt.ylabel('IMAG', fontsize=10)
-                plt.scatter(np.real(x), np.imag(x), s=16, c='b', label='TX')
-                plt.scatter(np.real(x_hat_zf), np.imag(x_hat_zf), s=16, c='y', label='ZF')
-                plt.scatter(np.real(x_hat_lmmse), np.imag(x_hat_lmmse), s=16, c='g', label='LMMSE')
-                plt.scatter(np.real(x_hat_dip), np.imag(x_hat_dip), s=16, c='r', label='DIP')
+                plt.scatter(np.real(np.array(x)), np.imag(np.array(x)), s=16, c='b', label='TX')
+                plt.scatter(np.real(np.array(x_hat_zf)), np.imag(np.array(x_hat_zf)), s=16, c='y', label='ZF')
+                plt.scatter(np.real(np.array(x_hat_lmmse)), np.imag(np.array(x_hat_lmmse)), s=16, c='g', label='LMMSE')
+                plt.scatter(np.real(np.array(x_hat_dip)), np.imag(np.array(x_hat_dip)), s=16, c='r', label='DIP')
                 plt.legend(loc='lower left', fontsize=8)
                 plt.tight_layout()
 
@@ -279,20 +280,20 @@ class ncodencorr(Model): # Inherits from Keras Model
 
         ##  Method 2: Bokeh
         #   Plot SER
-        ncodencorrplot(x=snrs, 
-                    y1=sers_zf_mean,
-                    y2=sers_lmmse_mean,
-                    y3=sers_dip_mean,
-                    y_label="SER (log)",
-                    title="SER: No Coding & No Sptatial Correlation",
-                    filename="SER-NCodeNCorr.html")
-        #   Plot BER
-        ncodencorrplot(x=snrs, 
-                    y1=bers_zf_mean,
-                    y2=bers_lmmse_mean,
-                    y3=bers_dip_mean,
-                    y_label="BER (log)",
-                    title="BER: No Coding & No Sptatial Correlation",
-                    filename="BER-NCodeNCorr.html")
+        # ncodencorrplot(x=snrs, 
+        #             y1=sers_zf_mean,
+        #             y2=sers_lmmse_mean,
+        #             y3=sers_dip_mean,
+        #             y_label="SER (log)",
+        #             title="SER: No Coding & No Sptatial Correlation",
+        #             filename="SER-NCodeNCorr.html")
+        # #   Plot BER
+        # ncodencorrplot(x=snrs, 
+        #             y1=bers_zf_mean,
+        #             y2=bers_lmmse_mean,
+        #             y3=bers_dip_mean,
+        #             y_label="BER (log)",
+        #             title="BER: No Coding & No Sptatial Correlation",
+        #             filename="BER-NCodeNCorr.html")
 
         return snrs, sers_zf_mean, sers_lmmse_mean, sers_dip_mean

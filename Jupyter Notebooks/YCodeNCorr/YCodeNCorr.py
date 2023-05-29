@@ -161,29 +161,6 @@ class ycodencorr(Model): # Inherits from Keras Model
                 ##  Same s for Uncoded and Coded Transmission
                 s = tf.cast(no*tf.eye(self.NUM_RX_ANT, self.NUM_RX_ANT), coded_y.dtype)
 
-                ### Zero-Forcing Equalizer
-                ##  Uncoded
-                # x_hat_zf, no_eff_zf = zf_equalizer(y, h, s)
-                # no_eff_zf = tf.reshape(no_eff_zf, shape)
-                # x_hat_zf = tf.reshape(x_hat_zf, shape)
-
-                ##  Coded
-                coded_x_hat_zf, coded_no_eff_zf = zf_equalizer(coded_y, coded_h, s)
-                coded_no_eff_zf = tf.reshape(coded_no_eff_zf, shape_coded_x)
-                coded_x_hat_zf = tf.reshape(coded_x_hat_zf, shape_coded_x)
-
-                ### LMMSE Equalizer
-                ##  Uncoded
-                # x_hat_lmmse, no_eff_lmmse = lmmse_equalizer(y, h, s)
-                # no_eff_lmmse = tf.reshape(no_eff_lmmse, shape)
-                # x_hat_lmmse = tf.reshape(x_hat_lmmse, shape)
-
-                ### LMMSE Equalizer
-                ##  Coded
-                coded_x_hat_lmmse, coded_no_eff_lmmse = lmmse_equalizer(coded_y, coded_h, s)
-                coded_no_eff_lmmse = tf.reshape(coded_no_eff_lmmse, shape_coded_x)
-                coded_x_hat_lmmse = tf.reshape(coded_x_hat_lmmse, shape_coded_x)
-
                 ### Deep Image Prior Eqaulizer
                 ##  Uncoded
                 ##  Complex to Real
@@ -210,21 +187,44 @@ class ycodencorr(Model): # Inherits from Keras Model
                 ##  Complex to Real
                 coded_y_shape = tf.shape(coded_y)
                 coded_y_reshape = tf.reshape(coded_y,[-1, self.NUM_RX_ANT])
-                coded_y_reshape_real_part = np.real(coded_y_reshape)
-                coded_y_reshape_image_part = np.imag(coded_y_reshape)
-                coded_y_reshape_real = np.concatenate([coded_y_reshape_real_part,coded_y_reshape_image_part], axis=1)
+                coded_y_reshape_real_part = tf.math.real(coded_y_reshape)
+                coded_y_reshape_image_part = tf.math.imag(coded_y_reshape)
+                coded_y_reshape_real = tf.concat([coded_y_reshape_real_part,coded_y_reshape_image_part], axis=1)
                 coded_h_shape = tf.shape(coded_h)
                 coded_h_reshape = tf.reshape(coded_h,[-1, self.NUM_RX_ANT, self.NUM_TX_ANT])
-                coded_h_reshape_real_part = np.real(coded_h_reshape)
-                coded_h_reshape_imag_part = np.imag(coded_h_reshape)
-                coded_h_reshape_real = np.concatenate([np.concatenate([coded_h_reshape_real_part, -coded_h_reshape_imag_part], axis=2),
-                                                       np.concatenate([coded_h_reshape_imag_part, coded_h_reshape_real_part], axis=2)],axis=1)
+                coded_h_reshape_real_part = tf.math.real(coded_h_reshape)
+                coded_h_reshape_imag_part = tf.math.imag(coded_h_reshape)
+                coded_h_reshape_real = tf.concat([tf.concat([coded_h_reshape_real_part, tf.multiply(coded_h_reshape_imag_part,-1)], axis=2),
+                                                  tf.concat([coded_h_reshape_imag_part, coded_h_reshape_real_part], axis=2)],axis=1)
                 ##  DIP Equalizer
-                coded_x_dip_ay,num_stop_point = self.dip.DIP(coded_y_reshape_real,coded_h_reshape_real)
+                coded_x_dip_ay,num_stop_point = self.dip.DIP(np.array(coded_y_reshape_real),np.array(coded_h_reshape_real))
                 coded_x_dip_ay_real_part,coded_x_dip_ay_imag_part = np.split(coded_x_dip_ay, indices_or_sections=2, axis=1)
                 coded_x_hat_dip = tf.cast(tf.reshape(tf.complex(coded_x_dip_ay_real_part,coded_x_dip_ay_imag_part), shape_coded_x), dtype=tf.complex64)
                 ##  Assume noise variance equal to channel noise
-                coded_no_eff_dip = no*np.ones(shape_coded_x)
+                coded_no_eff_dip = no*tf.ones(shape_coded_x)
+
+                ### Zero-Forcing Equalizer
+                ##  Uncoded
+                # x_hat_zf, no_eff_zf = zf_equalizer(y, h, s)
+                # no_eff_zf = tf.reshape(no_eff_zf, shape)
+                # x_hat_zf = tf.reshape(x_hat_zf, shape)
+
+                ##  Coded
+                coded_x_hat_zf, coded_no_eff_zf = zf_equalizer(coded_y, coded_h, s)
+                coded_no_eff_zf = tf.reshape(coded_no_eff_zf, shape_coded_x)
+                coded_x_hat_zf = tf.reshape(coded_x_hat_zf, shape_coded_x)
+
+                ### LMMSE Equalizer
+                ##  Uncoded
+                # x_hat_lmmse, no_eff_lmmse = lmmse_equalizer(y, h, s)
+                # no_eff_lmmse = tf.reshape(no_eff_lmmse, shape)
+                # x_hat_lmmse = tf.reshape(x_hat_lmmse, shape)
+
+                ### LMMSE Equalizer
+                ##  Coded
+                coded_x_hat_lmmse, coded_no_eff_lmmse = lmmse_equalizer(coded_y, coded_h, s)
+                coded_no_eff_lmmse = tf.reshape(coded_no_eff_lmmse, shape_coded_x)
+                coded_x_hat_lmmse = tf.reshape(coded_x_hat_lmmse, shape_coded_x)
 
                 ### Soft Decision Outputs Received Symbols(Integer)
                 ##  Uncoded
@@ -252,9 +252,9 @@ class ycodencorr(Model): # Inherits from Keras Model
                 # sers_lmmse[i, j] = ser_lmmse
                 # sers_dip[i, j] = ser_dip
                 ##  Coded
-                coded_sers_zf[i, j] = coded_ser_zf
-                coded_sers_lmmse[i, j] = coded_ser_lmmse
-                coded_sers_dip[i, j] = coded_ser_dip                
+                coded_sers_zf[i,j] = coded_ser_zf
+                coded_sers_lmmse[i,j] = coded_ser_lmmse
+                coded_sers_dip[i,j] = coded_ser_dip                
 
                 ### Bit LLR Calculation
                 ##  Uncoded
@@ -303,9 +303,9 @@ class ycodencorr(Model): # Inherits from Keras Model
                 # bers_lmmse[i][j] = ber_lmmse
                 # bers_dip[i][j] = ber_dip
                 ##  Coded
-                coded_bers_zf[i][j] = coded_ber_zf
-                coded_bers_lmmse[i][j] = coded_ber_lmmse
-                coded_bers_dip[i][j] = coded_ber_dip
+                coded_bers_zf[i,j] = coded_ber_zf
+                coded_bers_lmmse[i,j] = coded_ber_lmmse
+                coded_bers_dip[i,j] = coded_ber_dip
 
                 end_time = time.time()
                 time_spent = end_time-start_time
@@ -345,10 +345,10 @@ class ycodencorr(Model): # Inherits from Keras Model
                 # plt.yticks(fontsize=10)
                 # plt.xlabel('REAL', fontsize=10)
                 # plt.ylabel('IMAG', fontsize=10)
-                # plt.scatter(tf.math.real(x), tf.math.imag(x), s=16, c='b', label='TX')
-                # plt.scatter(tf.math.real(x_hat_zf), tf.math.imag(x_hat_zf), s=16, c='y', label='ZF')
-                # plt.scatter(tf.math.real(x_hat_lmmse), tf.math.imag(x_hat_lmmse), s=16, c='g', label='LMMSE')
-                # plt.scatter(tf.math.real(x_hat_dip), tf.math.imag(x_hat_dip), s=16, c='r', label='DIP')
+                # plt.scatter(tf.math.real(np.array(x)), tf.math.imag(np.array(x)), s=16, c='b', label='TX')
+                # plt.scatter(tf.math.real(np.array(x_hat_zf)), tf.math.imag(np.array(x_hat_zf)), s=16, c='y', label='ZF')
+                # plt.scatter(tf.math.real(np.array(x_hat_lmmse)), tf.math.imag(np.array(x_hat_lmmse)), s=16, c='g', label='LMMSE')
+                # plt.scatter(tf.math.realnp.array(x_hat_dip)), tf.math.imag(np.array(x_hat_dip)), s=16, c='r', label='DIP')
                 # plt.legend(loc='lower left', fontsize=8)
                 # plt.tight_layout()
 
@@ -360,9 +360,9 @@ class ycodencorr(Model): # Inherits from Keras Model
         # sers_lmmse_mean = np.mean(sers_lmmse, axis=0)
         # sers_dip_mean = np.mean(sers_dip, axis=0)
         ##  Coded
-        coded_sers_zf_mean = np.mean(coded_sers_zf, axis=0)
-        coded_sers_lmmse_mean = np.mean(coded_sers_lmmse, axis=0)
-        coded_sers_dip_mean = np.mean(coded_sers_dip, axis=0)        
+        coded_sers_zf_mean = tf.math.reduce_mean(coded_sers_zf, axis=0)
+        coded_sers_lmmse_mean = tf.math.reduce_mean(coded_sers_lmmse, axis=0)
+        coded_sers_dip_mean = tf.math.reduce_mean(coded_sers_dip, axis=0)        
 
         ### Mean BER Calculation
         ##   Uncoded
@@ -370,9 +370,9 @@ class ycodencorr(Model): # Inherits from Keras Model
         # bers_lmmse_mean = np.mean(bers_lmmse, axis=0)
         # bers_dip_mean = np.mean(bers_dip, axis=0)
         ##   Coded
-        coded_bers_zf_mean = np.mean(coded_bers_zf, axis=0)
-        coded_bers_lmmse_mean = np.mean(coded_bers_lmmse, axis=0)
-        coded_bers_dip_mean = np.mean(coded_bers_dip, axis=0)        
+        coded_bers_zf_mean = tf.math.reduce_mean(coded_bers_zf, axis=0)
+        coded_bers_lmmse_mean = tf.math.reduce_mean(coded_bers_lmmse, axis=0)
+        coded_bers_dip_mean = tf.math.reduce_mean(coded_bers_dip, axis=0)        
 
         ##### Plot SER and BER Figures
         ####  Method 1: Matplot
@@ -487,50 +487,50 @@ class ycodencorr(Model): # Inherits from Keras Model
         # plt.tight_layout()
 
         ###   Plot SER and BER, Uncoded and Coded        
-        plt.figure()
-        title = "SER & BER: Coding & No Sptatial Correlation"
-        xlabel = "$E_b/N_0$ (dB)"
-        ylabel = "SER/BER (log)"
-        plt.title(title, fontsize=12)
-        plt.xticks(fontsize=10)
-        plt.yticks(fontsize=10)
-        plt.xlabel(xlabel, fontsize=10)
-        plt.ylabel(ylabel, fontsize=10)
-        plt.grid(which="both")
+        # plt.figure()
+        # title = "SER & BER: Coding & No Sptatial Correlation"
+        # xlabel = "$E_b/N_0$ (dB)"
+        # ylabel = "SER/BER (log)"
+        # plt.title(title, fontsize=12)
+        # plt.xticks(fontsize=10)
+        # plt.yticks(fontsize=10)
+        # plt.xlabel(xlabel, fontsize=10)
+        # plt.ylabel(ylabel, fontsize=10)
+        # plt.grid(which="both")
         # plt.semilogy(snrs, sers_zf_mean, 'violet', label='ZF SER')
         # plt.semilogy(snrs, sers_lmmse_mean, 'turquoise', label='LMMSE SER')
         # plt.semilogy(snrs, sers_dip_mean, 'orange', label='DIP SER')        
-        plt.semilogy(snrs, coded_sers_zf_mean, 'dodgerblue', label='Coded ZF SER')
-        plt.semilogy(snrs, coded_sers_lmmse_mean, 'lime', label='Coded LMMSE SER')
-        plt.semilogy(snrs, coded_sers_dip_mean, 'darkred', label='Coded DIP SER')
+        # plt.semilogy(snrs, coded_sers_zf_mean, 'dodgerblue', label='Coded ZF SER')
+        # plt.semilogy(snrs, coded_sers_lmmse_mean, 'lime', label='Coded LMMSE SER')
+        # plt.semilogy(snrs, coded_sers_dip_mean, 'darkred', label='Coded DIP SER')
         # plt.semilogy(snrs, bers_zf_mean, 'purple', label='ZF BER')
         # plt.semilogy(snrs, bers_lmmse_mean, 'lightseagreen', label='LMMSE BER')
         # plt.semilogy(snrs, bers_dip_mean, 'gold', label='DIP BER')
-        plt.semilogy(snrs, coded_bers_zf_mean, 'blue', label='Coded ZF BER')
-        plt.semilogy(snrs, coded_bers_lmmse_mean, 'green', label='Coded LMMSE BER')
-        plt.semilogy(snrs, coded_bers_dip_mean, 'red', label='Coded DIP BER')
-        plt.legend(loc='lower left', fontsize=8)
-        plt.tight_layout()
+        # plt.semilogy(snrs, coded_bers_zf_mean, 'blue', label='Coded ZF BER')
+        # plt.semilogy(snrs, coded_bers_lmmse_mean, 'green', label='Coded LMMSE BER')
+        # plt.semilogy(snrs, coded_bers_dip_mean, 'red', label='Coded DIP BER')
+        # plt.legend(loc='lower left', fontsize=8)
+        # plt.tight_layout()
 
         plt.show()
 
         ##  Method 2: Bokeh
         #   Plot SER and BER, Uncoded and Coded
-        plotycodencorr(x=snrs, 
-                        # y1=sers_zf_mean,
-                        # y2=sers_lmmse_mean,
-                        # y3=sers_dip_mean,
-                        y4=coded_sers_zf_mean,
-                        y5=coded_sers_lmmse_mean,
-                        y6=coded_sers_dip_mean,
-                        # y7=bers_zf_mean,
-                        # y8=bers_lmmse_mean,
-                        # y9=bers_dip_mean,
-                        y10=coded_bers_zf_mean,
-                        y11=coded_bers_lmmse_mean,
-                        y12=coded_bers_dip_mean,
-                        y_label="SER/BER (log)",
-                        title="SER & BER: MIMO Falt-Fading with ZF, MMSE, DIP Equalizer",
-                        filename="SER&BER-FaltFading without Spaital Correlation.html")
+        # plotycodencorr(x=snrs, 
+        #                 # y1=sers_zf_mean,
+        #                 # y2=sers_lmmse_mean,
+        #                 # y3=sers_dip_mean,
+        #                 y4=coded_sers_zf_mean,
+        #                 y5=coded_sers_lmmse_mean,
+        #                 y6=coded_sers_dip_mean,
+        #                 # y7=bers_zf_mean,
+        #                 # y8=bers_lmmse_mean,
+        #                 # y9=bers_dip_mean,
+        #                 y10=coded_bers_zf_mean,
+        #                 y11=coded_bers_lmmse_mean,
+        #                 y12=coded_bers_dip_mean,
+        #                 y_label="SER/BER (log)",
+        #                 title="SER & BER: MIMO Falt-Fading with ZF, MMSE, DIP Equalizer",
+        #                 filename="SER&BER-FaltFading without Spaital Correlation.html")
 
         return snrs, coded_sers_zf_mean, coded_sers_lmmse_mean, coded_sers_dip_mean

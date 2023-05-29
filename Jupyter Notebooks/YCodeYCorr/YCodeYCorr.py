@@ -105,7 +105,7 @@ class ycodeycorr(Model): # Inherits from Keras Model
                                   iteration=100,
                                   LR=0.008,
                                   buffer_size=30,
-                                  threshold=0.001,
+                                  threshold=0.0005,
                                   stop=True)
 
     def __call__(self,
@@ -145,34 +145,6 @@ class ycodeycorr(Model): # Inherits from Keras Model
         coded_bers_zf_mean = np.empty((NUM_COR_GROUP, NUM_EBN0_POINTS))
         coded_bers_lmmse_mean = np.empty((NUM_COR_GROUP, NUM_EBN0_POINTS))
         coded_bers_dip_mean = np.empty((NUM_COR_GROUP, NUM_EBN0_POINTS))
-
-        # coded_sers_zf = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
-        # coded_sers_lmmse = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
-        # coded_sers_dip = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
-        # coded_bers_zf = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
-        # coded_bers_lmmse = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
-        # coded_bers_dip = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
-
-        # coded_sers_zf_mean = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
-        # coded_sers_lmmse_mean = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
-        # coded_sers_dip_mean = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
-        # coded_bers_zf_mean = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
-        # coded_bers_lmmse_mean = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
-        # coded_bers_dip_mean = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
-
-        # coded_sers_zf = tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
-        # coded_sers_lmmse = tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
-        # coded_sers_dip = tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
-        # coded_bers_zf = tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
-        # coded_bers_lmmse = tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
-        # coded_bers_dip = tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
-
-        # coded_sers_zf_mean = tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
-        # coded_sers_lmmse_mean = tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
-        # coded_sers_dip_mean = tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
-        # coded_bers_zf_mean = tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
-        # coded_bers_lmmse_mean = tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
-        # coded_bers_dip_mean = tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
 
         ### Spatial Correlation Loop Variable m
         m = 0
@@ -270,7 +242,7 @@ class ycodeycorr(Model): # Inherits from Keras Model
                         coded_h_reshape_real_part = tf.math.real(coded_h_reshape)
                         coded_h_reshape_imag_part = tf.math.imag(coded_h_reshape)
                         coded_h_reshape_real = tf.concat([tf.concat([coded_h_reshape_real_part, tf.multiply(coded_h_reshape_imag_part,-1)], axis=2),
-                                                            tf.concat([coded_h_reshape_imag_part, coded_h_reshape_real_part], axis=2)],axis=1)
+                                                          tf.concat([coded_h_reshape_imag_part, coded_h_reshape_real_part], axis=2)],axis=1)
                         ##  DIP Equalizer
                         coded_x_dip_ay,num_stop_point = self.dip.DIP(np.array(coded_y_reshape_real),np.array(coded_h_reshape_real))
                         coded_x_dip_ay_real_part,coded_x_dip_ay_imag_part = np.split(coded_x_dip_ay, indices_or_sections=2, axis=1)
@@ -378,9 +350,9 @@ class ycodeycorr(Model): # Inherits from Keras Model
                         # bers_lmmse[i][j] = ber_lmmse
                         # bers_dip[i][j] = ber_dip
                         ##  Coded
-                        coded_bers_zf[m,i,:] = coded_ber_zf
-                        coded_bers_lmmse[m,i,:] = coded_ber_lmmse
-                        coded_bers_dip[m,i,:] = coded_ber_dip
+                        coded_bers_zf[m,i,j] = coded_ber_zf
+                        coded_bers_lmmse[m,i,j] = coded_ber_lmmse
+                        coded_bers_dip[m,i,j] = coded_ber_dip
 
                         end_time = time.time()
                         time_spent = end_time-start_time
@@ -420,10 +392,10 @@ class ycodeycorr(Model): # Inherits from Keras Model
                         # plt.yticks(fontsize=10)
                         # plt.xlabel('REAL', fontsize=10)
                         # plt.ylabel('IMAG', fontsize=10)
-                        # plt.scatter(tf.math.real(x), tf.math.imag(x), s=16, c='b', label='TX')
-                        # plt.scatter(tf.math.real(x_hat_zf), tf.math.imag(x_hat_zf), s=16, c='y', label='ZF')
-                        # plt.scatter(tf.math.real(x_hat_lmmse), tf.math.imag(x_hat_lmmse), s=16, c='g', label='LMMSE')
-                        # plt.scatter(tf.math.real(x_hat_dip), tf.math.imag(x_hat_dip), s=16, c='r', label='DIP')
+                        # plt.scatter(np.real(np.array(x)), np.imag(np.array(x)), s=16, c='b', label='TX')
+                        # plt.scatter(np.real(np.array(x_hat_zf)), np.imag(np.array(x_hat_zf)), s=16, c='y', label='ZF')
+                        # plt.scatter(np.real(np.array(x_hat_lmmse)), np.imag(np.array(x_hat_lmmse)), s=16, c='g', label='LMMSE')
+                        # plt.scatter(np.real(np.array(x_hat_dip)), np.imag(np.array(x_hat_dip)), s=16, c='r', label='DIP')
                         # plt.legend(loc='lower left', fontsize=8)
                         # plt.tight_layout()
 

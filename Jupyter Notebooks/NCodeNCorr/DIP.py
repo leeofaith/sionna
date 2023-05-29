@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from torch import nn
-
+import torch.backends.cudnn as cudnn
 
 
 class DeepImagePrior(object):
@@ -28,7 +28,7 @@ class DeepImagePrior(object):
 
     def QAM_const(self):
         mod_n = self.M
-        sqrt_mod_n = np.int(np.sqrt(mod_n))
+        sqrt_mod_n = np.int32(np.sqrt(mod_n))   # np.int -> np.int32
         real_qam_consts = np.empty((mod_n), dtype=np.int64)
         imag_qam_consts = np.empty((mod_n), dtype=np.int64)
         for i in range(sqrt_mod_n):
@@ -68,9 +68,9 @@ class DeepImagePrior(object):
 
     def DIP(self,Y,H):
         
-        torch.backends.cudnn.enabled = True
-        torch.backends.cudnn.benchmark = True
-        dtype = torch.FloatTensor
+        cudnn.enabled = True     # torch.backends.cudnn.enabled -> import torch.backends.cudnn as cudnn
+        cudnn.benchmark = True
+        dtype = torch.float32   # torch.FloatTensor -> torch.float32
         batch_size = H.shape[0]
         x_dip_ay = np.empty((batch_size,self.user_num))
         num_stop_point = []
@@ -126,8 +126,8 @@ class DeepImagePrior(object):
                     if cur_var != 0 and cur_var <  self.threshold:
                         num_stop_point.append(i)
                         flag = True                
-                        
-            x_dip_ay[bs] = x_dip.reshape(-1)
+                x_dip_ay[bs] = x_dip.reshape(-1)        
+            # x_dip_ay[bs] = x_dip.reshape(-1)
         
         return x_dip_ay,num_stop_point
 
