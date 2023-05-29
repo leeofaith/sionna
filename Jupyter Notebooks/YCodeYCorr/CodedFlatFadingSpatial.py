@@ -383,7 +383,7 @@ class CodedFlatFadingSpatial(Model): # Inherits from Keras Model
                         llr_zf = self.demapper([x_hat_zf, no_eff_zf])
                         llr_lmmse = self.demapper([x_hat_lmmse, no_eff_lmmse])
                         llr_dip = self.demapper([tf.cast(x_hat_dip, dtype=tf.complex64), no_eff_dip])
-                        ##  Uncoded
+                        ##  Coded
                         coded_llr_zf = self.demapper([coded_x_hat_zf, coded_no_eff_zf])
                         coded_llr_lmmse = self.demapper([coded_x_hat_lmmse, coded_no_eff_lmmse])
                         coded_llr_dip = self.demapper([tf.cast(coded_x_hat_dip, dtype=tf.complex64), coded_no_eff_dip])

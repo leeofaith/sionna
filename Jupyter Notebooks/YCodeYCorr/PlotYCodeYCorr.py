@@ -6,9 +6,9 @@ def plotycodeycorr(x,
                     # y1,
                     # y2,
                     # y3,
-                    y4,
-                    y5,
-                    y6,
+                    # y4,
+                    # y5,
+                    # y6,
                     # y7,
                     # y8,
                     # y9,
@@ -24,9 +24,9 @@ def plotycodeycorr(x,
     # p.line(x, y1, legend_label='ZF SER', line_color='violet')
     # p.line(x, y2, legend_label='LMMSE SER', line_color='turquoise')
     # p.line(x, y3, legend_label='DIP SER', line_color='orange')
-    p.line(x, y4, legend_label='Coded ZF SER', line_color='dodgerblue')
-    p.line(x, y5, legend_label='Coded LMMSE SER', line_color='lime')
-    p.line(x, y6, legend_label='Coded DIP SER', line_color='darkred')
+    # p.line(x, y4, legend_label='Coded ZF SER', line_color='dodgerblue')
+    # p.line(x, y5, legend_label='Coded LMMSE SER', line_color='lime')
+    # p.line(x, y6, legend_label='Coded DIP SER', line_color='darkred')
     # p.line(x, y7, legend_label='ZF BER', line_color='purple')
     # p.line(x, y8, legend_label='LMMSE BER', line_color='lightseagreen')
     # p.line(x, y9, legend_label='DIP BER', line_color='gold')

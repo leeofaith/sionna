@@ -182,20 +182,21 @@ class ncodencorr(Model): # Inherits from Keras Model
                         ##  Complex to Real
                         y_shape = tf.shape(y)
                         y_reshape = tf.reshape(y,[-1, self.NUM_RX_ANT])
-                        y_reshape_real_part = np.real(y_reshape)
-                        y_reshape_image_part = np.imag(y_reshape)
-                        y_reshape_real = np.concatenate([y_reshape_real_part,y_reshape_image_part], axis=1)
+                        y_reshape_real_part = tf.math.real(y_reshape)
+                        y_reshape_image_part = tf.math.imag(y_reshape)
+                        y_reshape_real = tf.concat([y_reshape_real_part,y_reshape_image_part], axis=1)
                         h_shape = tf.shape(h)
                         h_reshape = tf.reshape(h,[-1, self.NUM_RX_ANT, self.NUM_TX_ANT])
-                        h_reshape_real_part = np.real(h_reshape)
-                        h_reshape_imag_part = np.imag(h_reshape)
-                        h_reshape_real = np.concatenate([np.concatenate([h_reshape_real_part, -h_reshape_imag_part], axis=2), np.concatenate([h_reshape_imag_part, h_reshape_real_part], axis=2)],axis=1)
+                        h_reshape_real_part = tf.math.real(h_reshape)
+                        h_reshape_imag_part = tf.math.imag(h_reshape)
+                        h_reshape_real = tf.concat([tf.concat([h_reshape_real_part, tf.multiply(h_reshape_imag_part,-1)], axis=2),
+                                                     tf.concat([h_reshape_imag_part, h_reshape_real_part], axis=2)],axis=1)
                         ##  DIP Equalizer
                         x_dip_ay,num_stop_point = self.dip.DIP(y_reshape_real,h_reshape_real)
                         x_dip_ay_real_part,x_dip_ay_imag_part = np.split(x_dip_ay, indices_or_sections=2, axis=1)
                         x_hat_dip = tf.cast(tf.reshape(tf.complex(x_dip_ay_real_part,x_dip_ay_imag_part), shape), dtype=tf.complex64)
                         ##  Assume noise variance equal to channel noise
-                        no_eff_dip = no*np.ones(shape)
+                        no_eff_dip = no*tf.ones(shape)
 
                         ### Zero-Forcing Equalizer
                         x_hat_zf, no_eff_zf = zf_equalizer(y, h, s)

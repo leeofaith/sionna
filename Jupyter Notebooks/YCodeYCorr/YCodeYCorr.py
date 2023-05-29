@@ -103,7 +103,7 @@ class ycodeycorr(Model): # Inherits from Keras Model
         self.dip = DeepImagePrior(user_num=2*NUM_TX_ANT,
                                   M=2**NUM_BITS_PER_SYMBOL,
                                   iteration=100,
-                                  LR=0.01,
+                                  LR=0.008,
                                   buffer_size=30,
                                   threshold=0.001,
                                   stop=True)
@@ -115,6 +115,8 @@ class ycodeycorr(Model): # Inherits from Keras Model
                  EBN0_DB_MAX,
                  NUM_EBN0_POINTS):
         
+        # tf.config.run_functions_eagerly(True)
+
         ### Number of Spatial Correlation Group
         NUM_COR_GROUP = (self.CORRELATION_INDEX_POINT)*(self.CORRELATION_INDEX_POINT)
         COR_GROUP =  ([0.1,0.1],[0.1,0.5],[0.1,0.9],[0.5,0.1],[0.5,0.5],[0.5,0.9],[0.9,0.1],[0.9,0.5],[0.9,0.9])
@@ -129,12 +131,13 @@ class ycodeycorr(Model): # Inherits from Keras Model
         # bers_dip = np.empty((NUM_DATA_GROUP, NUM_EBN0_POINTS))
 
         ### Code Variables Definition
-        coded_sers_zf = np.empty((NUM_DATA_GROUP, NUM_EBN0_POINTS))
-        coded_sers_lmmse = np.empty((NUM_DATA_GROUP, NUM_EBN0_POINTS))
-        coded_sers_dip = np.empty((NUM_DATA_GROUP, NUM_EBN0_POINTS))
-        coded_bers_zf = np.empty((NUM_DATA_GROUP, NUM_EBN0_POINTS))
-        coded_bers_lmmse = np.empty((NUM_DATA_GROUP, NUM_EBN0_POINTS))
-        coded_bers_dip = np.empty((NUM_DATA_GROUP, NUM_EBN0_POINTS))
+
+        coded_sers_zf = np.empty((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS))
+        coded_sers_lmmse = np.empty((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS))
+        coded_sers_dip = np.empty((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS))
+        coded_bers_zf = np.empty((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS))
+        coded_bers_lmmse = np.empty((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS))
+        coded_bers_dip = np.empty((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS))
 
         coded_sers_zf_mean = np.empty((NUM_COR_GROUP, NUM_EBN0_POINTS))
         coded_sers_lmmse_mean = np.empty((NUM_COR_GROUP, NUM_EBN0_POINTS))
@@ -142,6 +145,34 @@ class ycodeycorr(Model): # Inherits from Keras Model
         coded_bers_zf_mean = np.empty((NUM_COR_GROUP, NUM_EBN0_POINTS))
         coded_bers_lmmse_mean = np.empty((NUM_COR_GROUP, NUM_EBN0_POINTS))
         coded_bers_dip_mean = np.empty((NUM_COR_GROUP, NUM_EBN0_POINTS))
+
+        # coded_sers_zf = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
+        # coded_sers_lmmse = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
+        # coded_sers_dip = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
+        # coded_bers_zf = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
+        # coded_bers_lmmse = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
+        # coded_bers_dip = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
+
+        # coded_sers_zf_mean = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
+        # coded_sers_lmmse_mean = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
+        # coded_sers_dip_mean = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
+        # coded_bers_zf_mean = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
+        # coded_bers_lmmse_mean = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
+        # coded_bers_dip_mean = tf.Variable(tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64))
+
+        # coded_sers_zf = tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
+        # coded_sers_lmmse = tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
+        # coded_sers_dip = tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
+        # coded_bers_zf = tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
+        # coded_bers_lmmse = tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
+        # coded_bers_dip = tf.zeros((NUM_COR_GROUP, NUM_DATA_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
+
+        # coded_sers_zf_mean = tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
+        # coded_sers_lmmse_mean = tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
+        # coded_sers_dip_mean = tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
+        # coded_bers_zf_mean = tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
+        # coded_bers_lmmse_mean = tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
+        # coded_bers_dip_mean = tf.zeros((NUM_COR_GROUP, NUM_EBN0_POINTS), dtype=tf.float64)
 
         ### Spatial Correlation Loop Variable m
         m = 0
@@ -205,29 +236,6 @@ class ycodeycorr(Model): # Inherits from Keras Model
                         ##  Same s for Uncoded and Coded Transmission
                         s = tf.cast(no*tf.eye(self.NUM_RX_ANT, self.NUM_RX_ANT), coded_y.dtype)
 
-                        ### Zero-Forcing Equalizer
-                        ##  Uncoded
-                        # x_hat_zf, no_eff_zf = zf_equalizer(y, h, s)
-                        # no_eff_zf = tf.reshape(no_eff_zf, shape)
-                        # x_hat_zf = tf.reshape(x_hat_zf, shape)
-
-                        ##  Coded
-                        coded_x_hat_zf, coded_no_eff_zf = zf_equalizer(coded_y, coded_h, s)
-                        coded_no_eff_zf = tf.reshape(coded_no_eff_zf, shape_coded_x)
-                        coded_x_hat_zf = tf.reshape(coded_x_hat_zf, shape_coded_x)
-
-                        ### LMMSE Equalizer
-                        ##  Uncoded
-                        # x_hat_lmmse, no_eff_lmmse = lmmse_equalizer(y, h, s)
-                        # no_eff_lmmse = tf.reshape(no_eff_lmmse, shape)
-                        # x_hat_lmmse = tf.reshape(x_hat_lmmse, shape)
-
-                        ### LMMSE Equalizer
-                        ##  Coded
-                        coded_x_hat_lmmse, coded_no_eff_lmmse = lmmse_equalizer(coded_y, coded_h, s)
-                        coded_no_eff_lmmse = tf.reshape(coded_no_eff_lmmse, shape_coded_x)
-                        coded_x_hat_lmmse = tf.reshape(coded_x_hat_lmmse, shape_coded_x)
-
                         ### Deep Image Prior Eqaulizer
                         ##  Uncoded
                         ##  Complex to Real
@@ -254,21 +262,44 @@ class ycodeycorr(Model): # Inherits from Keras Model
                         ##  Complex to Real
                         coded_y_shape = tf.shape(coded_y)
                         coded_y_reshape = tf.reshape(coded_y,[-1, self.NUM_RX_ANT])
-                        coded_y_reshape_real_part = np.real(coded_y_reshape)
-                        coded_y_reshape_image_part = np.imag(coded_y_reshape)
-                        coded_y_reshape_real = np.concatenate([coded_y_reshape_real_part,coded_y_reshape_image_part], axis=1)
+                        coded_y_reshape_real_part = tf.math.real(coded_y_reshape)
+                        coded_y_reshape_image_part = tf.math.imag(coded_y_reshape)
+                        coded_y_reshape_real = tf.concat([coded_y_reshape_real_part,coded_y_reshape_image_part], axis=1)
                         coded_h_shape = tf.shape(coded_h)
                         coded_h_reshape = tf.reshape(coded_h,[-1, self.NUM_RX_ANT, self.NUM_TX_ANT])
-                        coded_h_reshape_real_part = np.real(coded_h_reshape)
-                        coded_h_reshape_imag_part = np.imag(coded_h_reshape)
-                        coded_h_reshape_real = np.concatenate([np.concatenate([coded_h_reshape_real_part, -coded_h_reshape_imag_part], axis=2),
-                                                            np.concatenate([coded_h_reshape_imag_part, coded_h_reshape_real_part], axis=2)],axis=1)
+                        coded_h_reshape_real_part = tf.math.real(coded_h_reshape)
+                        coded_h_reshape_imag_part = tf.math.imag(coded_h_reshape)
+                        coded_h_reshape_real = tf.concat([tf.concat([coded_h_reshape_real_part, tf.multiply(coded_h_reshape_imag_part,-1)], axis=2),
+                                                            tf.concat([coded_h_reshape_imag_part, coded_h_reshape_real_part], axis=2)],axis=1)
                         ##  DIP Equalizer
-                        coded_x_dip_ay,num_stop_point = self.dip.DIP(coded_y_reshape_real,coded_h_reshape_real)
+                        coded_x_dip_ay,num_stop_point = self.dip.DIP(np.array(coded_y_reshape_real),np.array(coded_h_reshape_real))
                         coded_x_dip_ay_real_part,coded_x_dip_ay_imag_part = np.split(coded_x_dip_ay, indices_or_sections=2, axis=1)
                         coded_x_hat_dip = tf.cast(tf.reshape(tf.complex(coded_x_dip_ay_real_part,coded_x_dip_ay_imag_part), shape_coded_x), dtype=tf.complex64)
                         ##  Assume noise variance equal to channel noise
-                        coded_no_eff_dip = no*np.ones(shape_coded_x)
+                        coded_no_eff_dip = no*tf.ones(shape_coded_x)
+
+                        ### Zero-Forcing Equalizer
+                        ##  Uncoded
+                        # x_hat_zf, no_eff_zf = zf_equalizer(y, h, s)
+                        # no_eff_zf = tf.reshape(no_eff_zf, shape)
+                        # x_hat_zf = tf.reshape(x_hat_zf, shape)
+
+                        ##  Coded
+                        coded_x_hat_zf, coded_no_eff_zf = zf_equalizer(coded_y, coded_h, s)
+                        coded_no_eff_zf = tf.reshape(coded_no_eff_zf, shape_coded_x)
+                        coded_x_hat_zf = tf.reshape(coded_x_hat_zf, shape_coded_x)
+
+                        ### LMMSE Equalizer
+                        ##  Uncoded
+                        # x_hat_lmmse, no_eff_lmmse = lmmse_equalizer(y, h, s)
+                        # no_eff_lmmse = tf.reshape(no_eff_lmmse, shape)
+                        # x_hat_lmmse = tf.reshape(x_hat_lmmse, shape)
+
+                        ### LMMSE Equalizer
+                        ##  Coded
+                        coded_x_hat_lmmse, coded_no_eff_lmmse = lmmse_equalizer(coded_y, coded_h, s)
+                        coded_no_eff_lmmse = tf.reshape(coded_no_eff_lmmse, shape_coded_x)
+                        coded_x_hat_lmmse = tf.reshape(coded_x_hat_lmmse, shape_coded_x)
 
                         ### Soft Decision Outputs Received Symbols(Integer)
                         ##  Uncoded
@@ -296,9 +327,9 @@ class ycodeycorr(Model): # Inherits from Keras Model
                         # sers_lmmse[i, j] = ser_lmmse
                         # sers_dip[i, j] = ser_dip
                         ##  Coded
-                        coded_sers_zf[i, j] = coded_ser_zf
-                        coded_sers_lmmse[i, j] = coded_ser_lmmse
-                        coded_sers_dip[i, j] = coded_ser_dip                
+                        coded_sers_zf[m,i,j] = coded_ser_zf
+                        coded_sers_lmmse[m,i,j] = coded_ser_lmmse
+                        coded_sers_dip[m,i,j] = coded_ser_dip                
 
                         ### Bit LLR Calculation
                         ##  Uncoded
@@ -347,9 +378,9 @@ class ycodeycorr(Model): # Inherits from Keras Model
                         # bers_lmmse[i][j] = ber_lmmse
                         # bers_dip[i][j] = ber_dip
                         ##  Coded
-                        coded_bers_zf[i][j] = coded_ber_zf
-                        coded_bers_lmmse[i][j] = coded_ber_lmmse
-                        coded_bers_dip[i][j] = coded_ber_dip
+                        coded_bers_zf[m,i,:] = coded_ber_zf
+                        coded_bers_lmmse[m,i,:] = coded_ber_lmmse
+                        coded_bers_dip[m,i,:] = coded_ber_dip
 
                         end_time = time.time()
                         time_spent = end_time-start_time
@@ -404,9 +435,9 @@ class ycodeycorr(Model): # Inherits from Keras Model
                     # sers_lmmse_mean = np.mean(sers_lmmse, axis=0)
                     # sers_dip_mean = np.mean(sers_dip, axis=0)
                     ##  Coded
-                    coded_sers_zf_mean = np.mean(coded_sers_zf, axis=0)
-                    coded_sers_lmmse_mean = np.mean(coded_sers_lmmse, axis=0)
-                    coded_sers_dip_mean = np.mean(coded_sers_dip, axis=0)        
+                    coded_sers_zf_mean[m] = tf.math.reduce_mean(coded_sers_zf[m], axis=0)
+                    coded_sers_lmmse_mean[m] = tf.math.reduce_mean(coded_sers_lmmse[m], axis=0)
+                    coded_sers_dip_mean[m] = tf.math.reduce_mean(coded_sers_dip[m], axis=0)
 
                     ### Mean BER Calculation
                     ##   Uncoded
@@ -414,9 +445,9 @@ class ycodeycorr(Model): # Inherits from Keras Model
                     # bers_lmmse_mean = np.mean(bers_lmmse, axis=0)
                     # bers_dip_mean = np.mean(bers_dip, axis=0)
                     ##   Coded
-                    coded_bers_zf_mean = np.mean(coded_bers_zf, axis=0)
-                    coded_bers_lmmse_mean = np.mean(coded_bers_lmmse, axis=0)
-                    coded_bers_dip_mean = np.mean(coded_bers_dip, axis=0)        
+                    coded_bers_zf_mean[m] = tf.math.reduce_mean(coded_bers_zf[m], axis=0)
+                    coded_bers_lmmse_mean[m] = tf.math.reduce_mean(coded_bers_lmmse[m], axis=0)
+                    coded_bers_dip_mean[m] = tf.math.reduce_mean(coded_bers_dip[m], axis=0)  
 
                     ##### Plot SER and BER Figures
                     ####  Method 1: Matplot
@@ -449,9 +480,9 @@ class ycodeycorr(Model): # Inherits from Keras Model
                     plt.xlabel(xlabel, fontsize=10)
                     plt.ylabel(ylabel, fontsize=10)
                     plt.grid(which="both")
-                    plt.semilogy(snrs, coded_sers_zf_mean, 'b', label='Coded ZF')
-                    plt.semilogy(snrs, coded_sers_lmmse_mean, 'g', label='Coded LMMSE')
-                    plt.semilogy(snrs, coded_sers_dip_mean, 'r', label='Coded DIP')
+                    plt.semilogy(snrs, coded_sers_zf_mean[m], 'b', label='Coded ZF')
+                    plt.semilogy(snrs, coded_sers_lmmse_mean[m], 'g', label='Coded LMMSE')
+                    plt.semilogy(snrs, coded_sers_dip_mean[m], 'r', label='Coded DIP')
                     plt.legend(loc='lower left', fontsize=8)
                     plt.tight_layout()
 
@@ -504,9 +535,9 @@ class ycodeycorr(Model): # Inherits from Keras Model
                     plt.xlabel(xlabel, fontsize=10)
                     plt.ylabel(ylabel, fontsize=10)
                     plt.grid(which="both")
-                    plt.semilogy(snrs, coded_bers_zf_mean, 'b', label='Coded ZF')
-                    plt.semilogy(snrs, coded_bers_lmmse_mean, 'g', label='Coded LMMSE')
-                    plt.semilogy(snrs, coded_bers_dip_mean, 'r', label='Coded DIP')
+                    plt.semilogy(snrs, coded_bers_zf_mean[m], 'b', label='Coded ZF')
+                    plt.semilogy(snrs, coded_bers_lmmse_mean[m], 'g', label='Coded LMMSE')
+                    plt.semilogy(snrs, coded_bers_dip_mean[m], 'r', label='Coded DIP')
                     plt.legend(loc='lower left', fontsize=8)
                     plt.tight_layout()
 
@@ -531,114 +562,114 @@ class ycodeycorr(Model): # Inherits from Keras Model
                     # plt.tight_layout()
 
                     ###   Plot SER and BER, Uncoded and Coded        
-                    plt.figure()
-                    title = f"SER & BER: Coding & Corr(Tx{TX_ANT_CORRELATION},Rx{RX_ANT_CORRELATION})"
-                    xlabel = "$E_b/N_0$ (dB)"
-                    ylabel = "SER/BER (log)"
-                    plt.title(title, fontsize=12)
-                    plt.xticks(fontsize=10)
-                    plt.yticks(fontsize=10)
-                    plt.xlabel(xlabel, fontsize=10)
-                    plt.ylabel(ylabel, fontsize=10)
-                    plt.grid(which="both")
+                    # plt.figure()
+                    # title = f"SER & BER: Coding & Corr(Tx{TX_ANT_CORRELATION},Rx{RX_ANT_CORRELATION})"
+                    # xlabel = "$E_b/N_0$ (dB)"
+                    # ylabel = "SER/BER (log)"
+                    # plt.title(title, fontsize=12)
+                    # plt.xticks(fontsize=10)
+                    # plt.yticks(fontsize=10)
+                    # plt.xlabel(xlabel, fontsize=10)
+                    # plt.ylabel(ylabel, fontsize=10)
+                    # plt.grid(which="both")
                     # plt.semilogy(snrs, sers_zf_mean, 'violet', label='ZF SER')
                     # plt.semilogy(snrs, sers_lmmse_mean, 'turquoise', label='LMMSE SER')
                     # plt.semilogy(snrs, sers_dip_mean, 'orange', label='DIP SER')        
-                    plt.semilogy(snrs, coded_sers_zf_mean, 'dodgerblue', label='Coded ZF SER')
-                    plt.semilogy(snrs, coded_sers_lmmse_mean, 'lime', label='Coded LMMSE SER')
-                    plt.semilogy(snrs, coded_sers_dip_mean, 'darkred', label='Coded DIP SER')
+                    # plt.semilogy(snrs, coded_sers_zf_mean[m], 'dodgerblue', label='Coded ZF SER')
+                    # plt.semilogy(snrs, coded_sers_lmmse_mean[m], 'lime', label='Coded LMMSE SER')
+                    # plt.semilogy(snrs, coded_sers_dip_mean[m], 'darkred', label='Coded DIP SER')
                     # plt.semilogy(snrs, bers_zf_mean, 'purple', label='ZF BER')
                     # plt.semilogy(snrs, bers_lmmse_mean, 'lightseagreen', label='LMMSE BER')
                     # plt.semilogy(snrs, bers_dip_mean, 'gold', label='DIP BER')
-                    plt.semilogy(snrs, coded_bers_zf_mean, 'blue', label='Coded ZF BER')
-                    plt.semilogy(snrs, coded_bers_lmmse_mean, 'green', label='Coded LMMSE BER')
-                    plt.semilogy(snrs, coded_bers_dip_mean, 'red', label='Coded DIP BER')
-                    plt.legend(loc='lower left', fontsize=8)
-                    plt.tight_layout()
+                    # plt.semilogy(snrs, coded_bers_zf_mean[m], 'blue', label='Coded ZF BER')
+                    # plt.semilogy(snrs, coded_bers_lmmse_mean[m], 'green', label='Coded LMMSE BER')
+                    # plt.semilogy(snrs, coded_bers_dip_mean[m], 'red', label='Coded DIP BER')
+                    # plt.legend(loc='lower left', fontsize=8)
+                    # plt.tight_layout()
 
-                    plt.show()
+                    # plt.show()
 
                     ##  Method 2: Bokeh
                     #   Plot SER and BER, Uncoded and Coded
-                    plotycodeycorr(x=snrs, 
+                    # plotycodeycorr(x=snrs, 
                                     # y1=sers_zf_mean,
                                     # y2=sers_lmmse_mean,
                                     # y3=sers_dip_mean,
-                                    y4=coded_sers_zf_mean[m],
-                                    y5=coded_sers_lmmse_mean[m],
-                                    y6=coded_sers_dip_mean[m],
+                                    # y4=coded_sers_zf_mean[m],
+                                    # y5=coded_sers_lmmse_mean[m],
+                                    # y6=coded_sers_dip_mean[m],
                                     # y7=bers_zf_mean,
                                     # y8=bers_lmmse_mean,
                                     # y9=bers_dip_mean,
-                                    y10=coded_bers_zf_mean[m],
-                                    y11=coded_bers_lmmse_mean[m],
-                                    y12=coded_bers_dip_mean[m],
-                                    y_label="SER/BER (log)",
-                                    title="SER & BER: Coding & Corr({TX_ANT_CORRELATION},{RX_ANT_CORRELATION})",
-                                    filename="SER&BER-NCodeYCorr({TX_ANT_CORRELATION},{RX_ANT_CORRELATION}).html")
+                                    # y10=coded_bers_zf_mean[m],
+                                    # y11=coded_bers_lmmse_mean[m],
+                                    # y12=coded_bers_dip_mean[m],
+                                    # y_label="SER/BER (log)",
+                                    # title="SER & BER: Coding & Corr({TX_ANT_CORRELATION},{RX_ANT_CORRELATION})",
+                                    # filename="SER&BER-NCodeYCorr({TX_ANT_CORRELATION},{RX_ANT_CORRELATION}).html")
 
                 ### Spatial Correlation Loop Variable m
                 m = m+1
 
         ### Plot SER and BER Seperately at different Spatial Correlation
-        ##  SER
-        plt.figure()
-        title = "SER: Coding & Corr"
-        xlabel = "$E_b/N_0$ (dB)"
-        ylabel = "SER (log)"
-        plt.title(title, fontsize=12)
-        plt.xticks(fontsize=10)
-        plt.yticks(fontsize=10)
-        plt.xlabel(xlabel, fontsize=10)
-        plt.ylabel(ylabel, fontsize=10)
-        plt.grid(which="both")
-        for m in range(NUM_COR_GROUP):
-            plt.semilogy(snrs, coded_sers_zf_mean[m], label='ZF SER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))
-            plt.semilogy(snrs, coded_sers_lmmse_mean[m], label='LMMSE SER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))
-            plt.semilogy(snrs, coded_sers_dip_mean[m], label='DIP SER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))     
-            plt.legend(loc='best', bbox_to_anchor=(1, 1), ncol=3, fontsize=8)
-            plt.tight_layout()
-        plt.show()
+        #  SER
+        # plt.figure()
+        # title = "SER: Coding & Corr"
+        # xlabel = "$E_b/N_0$ (dB)"
+        # ylabel = "SER (log)"
+        # plt.title(title, fontsize=12)
+        # plt.xticks(fontsize=10)
+        # plt.yticks(fontsize=10)
+        # plt.xlabel(xlabel, fontsize=10)
+        # plt.ylabel(ylabel, fontsize=10)
+        # plt.grid(which="both")
+        # for m in range(NUM_COR_GROUP):
+        #     plt.semilogy(snrs, coded_sers_zf_mean[m], label='ZF SER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))
+        #     plt.semilogy(snrs, coded_sers_lmmse_mean[m], label='LMMSE SER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))
+        #     plt.semilogy(snrs, coded_sers_dip_mean[m], label='DIP SER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))     
+        #     plt.legend(loc='best', bbox_to_anchor=(1, 1), ncol=3, fontsize=8)
+        #     plt.tight_layout()
+        # plt.show()
         
         ##  BER 
-        plt.figure()
-        title = "BER: Coding & Corr"
-        xlabel = "$E_b/N_0$ (dB)"
-        ylabel = "SER/BER (log)"
-        plt.title(title, fontsize=12)
-        plt.xticks(fontsize=10)
-        plt.yticks(fontsize=10)
-        plt.xlabel(xlabel, fontsize=10)
-        plt.ylabel(ylabel, fontsize=10)
-        plt.grid(which="both")
-        for m in range(NUM_COR_GROUP):
-            plt.semilogy(snrs, coded_bers_zf_mean[m], label='ZF BER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))
-            plt.semilogy(snrs, coded_bers_lmmse_mean[m], label='LMMSE BER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))
-            plt.semilogy(snrs, coded_bers_dip_mean[m], label='DIP BER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))
-            plt.legend(loc='best', bbox_to_anchor=(1, 1), ncol=3, fontsize=8)
-            plt.tight_layout()
-        plt.show()
+        # plt.figure()
+        # title = "BER: Coding & Corr"
+        # xlabel = "$E_b/N_0$ (dB)"
+        # ylabel = "SER/BER (log)"
+        # plt.title(title, fontsize=12)
+        # plt.xticks(fontsize=10)
+        # plt.yticks(fontsize=10)
+        # plt.xlabel(xlabel, fontsize=10)
+        # plt.ylabel(ylabel, fontsize=10)
+        # plt.grid(which="both")
+        # for m in range(NUM_COR_GROUP):
+        #     plt.semilogy(snrs, coded_bers_zf_mean[m], label='ZF BER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))
+        #     plt.semilogy(snrs, coded_bers_lmmse_mean[m], label='LMMSE BER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))
+        #     plt.semilogy(snrs, coded_bers_dip_mean[m], label='DIP BER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))
+        #     plt.legend(loc='best', bbox_to_anchor=(1, 1), ncol=3, fontsize=8)
+        #     plt.tight_layout()
+        # plt.show()
         
         ##  SER & BER
-        plt.figure()
-        title = "SER & BER: Coding & Corr"
-        xlabel = "$E_b/N_0$ (dB)"
-        ylabel = "SER/BER (log)"
-        plt.title(title, fontsize=12)
-        plt.xticks(fontsize=10)
-        plt.yticks(fontsize=10)
-        plt.xlabel(xlabel, fontsize=10)
-        plt.ylabel(ylabel, fontsize=10)
-        plt.grid(which="both")
-        for m in range(NUM_COR_GROUP):
-            plt.semilogy(snrs, coded_bers_zf_mean[m], label='ZF BER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))
-            plt.semilogy(snrs, coded_bers_lmmse_mean[m], label='LMMSE BER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))
-            plt.semilogy(snrs, coded_bers_dip_mean[m], label='DIP BER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))
-            plt.semilogy(snrs, coded_sers_zf_mean[m], label='ZF SER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))
-            plt.semilogy(snrs, coded_sers_lmmse_mean[m], label='LMMSE SER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))
-            plt.semilogy(snrs, coded_sers_dip_mean[m], label='DIP SER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1])) 
-            plt.legend(loc='best', bbox_to_anchor=(1, 1), ncol=3, fontsize=8)
-            plt.tight_layout()
-        plt.show()
+        # plt.figure()
+        # title = "SER & BER: Coding & Corr"
+        # xlabel = "$E_b/N_0$ (dB)"
+        # ylabel = "SER/BER (log)"
+        # plt.title(title, fontsize=12)
+        # plt.xticks(fontsize=10)
+        # plt.yticks(fontsize=10)
+        # plt.xlabel(xlabel, fontsize=10)
+        # plt.ylabel(ylabel, fontsize=10)
+        # plt.grid(which="both")
+        # for m in range(NUM_COR_GROUP):
+        #     plt.semilogy(snrs, coded_bers_zf_mean[m], label='ZF BER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))
+        #     plt.semilogy(snrs, coded_bers_lmmse_mean[m], label='LMMSE BER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))
+        #     plt.semilogy(snrs, coded_bers_dip_mean[m], label='DIP BER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))
+        #     # plt.semilogy(snrs, coded_sers_zf_mean[m], label='ZF SER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))
+        #     # plt.semilogy(snrs, coded_sers_lmmse_mean[m], label='LMMSE SER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1]))
+        #     # plt.semilogy(snrs, coded_sers_dip_mean[m], label='DIP SER ({},{})'.format(COR_GROUP[m][0],COR_GROUP[m][1])) 
+        #     plt.legend(loc='best', bbox_to_anchor=(1, 1), ncol=3, fontsize=8)
+        #     plt.tight_layout()
+        # plt.show()
 
         return snrs, coded_sers_zf_mean, coded_sers_lmmse_mean, coded_sers_dip_mean
